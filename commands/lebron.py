@@ -22,7 +22,6 @@ class Lebron(commands.Cog):
         self.config = load_config()
 
     @commands.command(name="setlebron")
-    @commands.has_permissions(administrator=True)
     async def set_lebron(self, ctx):
         self.config["channel_id"] = ctx.channel.id
         save_config(self.config)
@@ -30,7 +29,6 @@ class Lebron(commands.Cog):
         await ctx.send("Lebron replies enabled 💀")
 
     @commands.command(name="offlebron")
-    @commands.has_permissions(administrator=True)
     async def off_lebron(self, ctx):
         self.config["channel_id"] = None
         save_config(self.config)
