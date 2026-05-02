@@ -2,24 +2,54 @@ from discord.ext import commands
 import random
 import asyncio
 
-SIMON_CHANNEL_ID = 1500168505184485577  # ← your channel
+SIMON_CHANNEL_ID = 1500168505184485577  # your channel
 
 ROUNDS = 15
+ANSWER_TIME = 7
+ROUND_PAUSE = 5
 
-PROMPTS = [
-    "type `meow`","type `lebron`","type `water`","type `koni`","type `real`",
-    "type `banana`","type `apple`","type `pizza`","type `hello`","type `bye`",
-    "send `💀`","send `😭`","send `😂`","send `🔥`","send `🐈`",
-    "send `👀`","send `😈`","send `🤨`","send `😡`","send `😎`",
-    "say `i am cooked`","say `hydration is important`","say `simon is watching`",
-    "say `skill issue`","say `i love discord`","say `brainrot`",
-    "say `absolute cinema`","say `never cook again`","say `i need water`",
-    "say `this server is cooked`","say `i have no enemies`","say `main character`",
-    "say `npc moment`","say `lowkey`","say `highkey`",
-    "say `this is crazy`","say `bro what`","say `no way`",
-    "type `123`","type `abc`","type `xyz`",
-    "type `gg`","type `ez`","type `win`","type `loss`",
-    "send `❤️`","send `💔`","send `💯`","send `✨`","send `🎯`"
+WORDS = [
+    "meow","lebron","water","koni","real","banana","apple","pizza","hello","bye",
+    "brainrot","aura","npc","lag","skill","issue","cooked","hydrate","raisin","fish",
+    "math","walls","grass","dry","wet","socks","spoon","fork","table","chair",
+    "pickle","cheese","noodle","rice","beans","yap","goofy","bonk","boop","mango",
+    "vibes","crime","court","guilty","judge","snitch","wizard","rat","cat","dog",
+    "frog","duck","bread","toast","jam","juice","milk","sleep","chaos","panic",
+    "sus","valid","error","glitch","system","loading","buffer","legacy","bench","hoop",
+    "planet","moon","sun","star","cloud","rain","storm","sand","desert","keyboard",
+    "mouse","screen","server","bot","command","prefix","termux","github"
+]
+
+FAKE_PREFIXES = [
+    "SIMON SAYS",
+    "simon says",
+    "Simon Says",
+    "Simon sayss",
+    "Simon say",
+    "S1mon says",
+    "Sim0n says",
+    "Simon said",
+    "Simon maybe says",
+    "Simon kinda says",
+    "Simon lowkey says",
+    "Simon highkey says",
+    "Simon whispers",
+    "Simon asks",
+    "Simon screams",
+    "Simon commands",
+    "Simon doesnt say",
+    "Not Simon says",
+    "Definitely Simon says",
+    "Koni says",
+    "Lebron says",
+    "System says",
+    "Bot says",
+    "S i m o n says",
+    "Simon says??",
+    "Simon says...",
+    "Simon: says",
+    "Simon says -",
+    "Simon says:",
 ]
 
 class Simon(commands.Cog):
@@ -28,76 +58,118 @@ class Simon(commands.Cog):
         self.running = False
         self.scores = {}
 
+    def make_prompt(self, force_real=None):
+        word = random.choice(WORDS)
+
+        # 🔥 control fake frequency
+        if force_real is None:
+            real = random.random() < 0.65  # 65% real 35% fake
+        else:
+            real = force_real
+
+        if real:
+            prefix = "Simon says"  # ONLY valid one
+        else:
+            prefix = random.choice(FAKE_PREFIXES)
+
+        style = random.choice([
+            f"{prefix} {word}",
+            f"{prefix} `{word}`",
+            f"{prefix} **{word}**",
+            f"{prefix}\n{word}",
+            f"{prefix}: {word}",
+            f"{prefix} ||{word}||"
+        ])
+
+        return style, word, real
+
     @commands.command(name="simonstart")
     async def start(self, ctx):
         if ctx.channel.id != SIMON_CHANNEL_ID:
             return
 
         if self.running:
-            return await ctx.send("Simon already running 💀")
+            return await ctx.send("Simon already running")
 
         self.running = True
         self.scores = {}
 
-        await ctx.send("Simon Says started 😈 First correct reply wins each round")
+        await ctx.send("Simon Says started")
+
+        fake_streak = 0
 
         for round_num in range(1, ROUNDS + 1):
             if not self.running:
                 break
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(ROUND_PAUSE)
 
-            prompt = random.choice(PROMPTS)
-            real = random.choice([True, False])
-
-            if real:
-                text = f"Simon says {prompt}"
+            # 🔥 prevent too many fake rounds
+            if fake_streak >= 2:
+                prompt, expected, real = self.make_prompt(force_real=True)
+                fake_streak = 0
             else:
-                text = prompt
+                prompt, expected, real = self.make_prompt()
+                if not real:
+                    fake_streak += 1
+                else:
+                    fake_streak = 0
 
-            await ctx.send(f"**Round {round_num}/{ROUNDS}**\n{text}")
+            await ctx.send(f"Round {round_num}/{ROUNDS}\n{prompt}")
 
-            expected = prompt.replace("type `","").replace("send `","").replace("say `","").replace("`","")
+            answered = False
 
             def check(msg):
-                return (
-                    msg.channel.id == SIMON_CHANNEL_ID
-                    and not msg.author.bot
-                )
+                return msg.channel.id == SIMON_CHANNEL_ID and not msg.author.bot
 
-            try:
-                msg = await self.bot.wait_for("message", timeout=6, check=check)
+            end_time = asyncio.get_event_loop().time() + ANSWER_TIME
 
-                if real:
-                    if msg.content.lower().strip() == expected.lower():
-                        self.scores[msg.author.id] = self.scores.get(msg.author.id, 0) + 1
-                        await ctx.send(f"{msg.author.mention} got it FIRST ✅ +1 point")
+            while asyncio.get_event_loop().time() < end_time and not answered:
+                try:
+                    remaining = end_time - asyncio.get_event_loop().time()
+                    msg = await self.bot.wait_for("message", timeout=remaining, check=check)
+
+                    uid = msg.author.id
+                    content = msg.content.strip()
+                    correct = content == expected
+
+                    if real:
+                        if correct:
+                            self.scores[uid] = self.scores.get(uid, 0) + 1
+                            await ctx.send(f"{msg.author.mention} +1")
+                            answered = True
+                        else:
+                            self.scores[uid] = self.scores.get(uid, 0) - 1
+                            await ctx.send(f"{msg.author.mention} -1")
                     else:
-                        await ctx.send(f"{msg.author.mention} wrong 💀")
-                else:
-                    if msg.content.lower().strip() == expected.lower():
-                        await ctx.send(f"{msg.author.mention} fell for it 💀 no Simon says")
-                    else:
-                        await ctx.send("no one got baited 🧠")
+                        if correct:
+                            self.scores[uid] = self.scores.get(uid, 0) - 1
+                            await ctx.send(f"{msg.author.mention} -1")
+                            answered = True
+                        else:
+                            self.scores[uid] = self.scores.get(uid, 0) - 1
+                            await ctx.send(f"{msg.author.mention} -1")
 
-            except asyncio.TimeoutError:
-                await ctx.send("no one responded 💀")
+                except asyncio.TimeoutError:
+                    break
 
-        # 🔥 END GAME
+            if not answered:
+                await ctx.send("No score")
+
         self.running = False
 
         if not self.scores:
-            return await ctx.send("game ended. nobody scored 💀")
+            return await ctx.send("Game ended")
+
+        leaderboard = "Final scores\n"
+        for uid, pts in sorted(self.scores.items(), key=lambda x: x[1], reverse=True):
+            leaderboard += f"<@{uid}> — {pts}\n"
 
         winner_id = max(self.scores, key=self.scores.get)
         winner_score = self.scores[winner_id]
 
-        leaderboard = "🏆 **Final Scores**\n"
-        for uid, pts in sorted(self.scores.items(), key=lambda x: x[1], reverse=True):
-            leaderboard += f"<@{uid}> — {pts}\n"
-
         await ctx.send(leaderboard)
-        await ctx.send(f"👑 WINNER: <@{winner_id}> with **{winner_score} points** 😈")
+        await ctx.send(f"Winner: <@{winner_id}> with {winner_score}")
 
     @commands.command(name="simonstop")
     async def stop(self, ctx):
@@ -105,7 +177,7 @@ class Simon(commands.Cog):
             return
 
         self.running = False
-        await ctx.send("Simon stopped 🛑")
+        await ctx.send("Simon stopped")
 
 async def setup(bot):
     await bot.add_cog(Simon(bot))
