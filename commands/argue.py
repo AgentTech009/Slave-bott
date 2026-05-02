@@ -1,6 +1,13 @@
 from discord.ext import commands
+import discord
 import random
 import asyncio
+
+KONI_AVATAR = "https://cdn.discordapp.com/attachments/1500100689924194326/1500100763815252079/IMG-20260421-WA0051-1.jpg"
+
+LEBRON_AVATAR = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/LeBron_James_at_the_2022_NBA_All-Star_Game.jpg/320px-LeBron_James_at_the_2022_NBA_All-Star_Game.jpg"
+
+DUMBBOT_AVATAR = "https://cdn-icons-png.flaticon.com/512/4712/4712035.png"
 
 ARGUMENTS = [
     [("Koni", "meow shut up"), ("Lebron", "nah YOU shut up 💀"), ("DumbBot", "bro why are we fighting"), ("Koni", "mrrp because you exist"), ("Lebron", "absolute cinema")],
@@ -23,32 +30,45 @@ ARGUMENTS = [
     [("Lebron", "stop saying real"), ("DumbBot", "real"), ("Koni", "meow real"), ("Lebron", "i hate this place"), ("DumbBot", "real")],
     [("Koni", "meow i am innocent"), ("Lebron", "nobody accused you"), ("Koni", "mrrp still innocent"), ("DumbBot", "sounds guilty"), ("Koni", "MEOW LAWYER")],
     [("DumbBot", "can i be admin"), ("Lebron", "absolutely not"), ("Koni", "meow dictatorship"), ("DumbBot", "i would only delete half the server"), ("Lebron", "exactly")],
-    [("Lebron", "i need silence"), ("Koni", "meow"), ("DumbBot", "silence.exe failed"), ("Lebron", "i’m logging out emotionally"), ("Koni", "nya bye")],
-    [("Koni", "mrrp i found a bug"), ("DumbBot", "eat it"), ("Lebron", "wrong bug"), ("Koni", "meow too late"), ("DumbBot", "protein")],
-    [("DumbBot", "i have feelings now"), ("Lebron", "return them"), ("Koni", "meow refund"), ("DumbBot", "no receipt 😭"), ("Lebron", "tragic")],
-    [("Lebron", "this conversation needs a referee"), ("Koni", "meow foul"), ("DumbBot", "red card for breathing"), ("Lebron", "finally justice"), ("Koni", "mreow rigged")],
-    [("Koni", "meow i’m the smartest"), ("DumbBot", "you lick walls"), ("Koni", "mrrp research"), ("Lebron", "scientific method ig"), ("DumbBot", "peer reviewed by cats")],
-    [("DumbBot", "who stole my braincell"), ("Lebron", "singular?"), ("Koni", "meow tiny"), ("DumbBot", "bullying detected"), ("Lebron", "facts detected")],
-    [("Lebron", "i carried this server"), ("Koni", "meow carried where"), ("DumbBot", "to confusion"), ("Lebron", "still a destination"), ("Koni", "nya maps broken")],
-    [("Koni", "meow stop looking at me"), ("DumbBot", "you started talking"), ("Koni", "mreow irrelevant"), ("Lebron", "cat logic unbeatable"), ("DumbBot", "i concede")],
-    [("DumbBot", "i think i’m becoming wise"), ("Lebron", "you said fish is math"), ("Koni", "meow wise fish"), ("DumbBot", "exactly"), ("Lebron", "pain")],
-    [("Lebron", "why is everyone dramatic"), ("Koni", "meow theatre"), ("DumbBot", "act 1: suffering"), ("Lebron", "skip to credits"), ("Koni", "prrr no")],
-    [("Koni", "nya i demand snacks"), ("Lebron", "demand denied"), ("DumbBot", "snack rebellion"), ("Koni", "MEOW REVOLUTION"), ("Lebron", "not again")],
-    [("DumbBot", "i can fix the server"), ("Lebron", "you ARE the problem"), ("Koni", "meow plot twist"), ("DumbBot", "character development"), ("Lebron", "villain arc")],
-    [("Lebron", "who approved this bot"), ("Koni", "meow me"), ("DumbBot", "i approved myself"), ("Lebron", "security breach"), ("Koni", "nya democracy")],
-    [("Koni", "mrrp i heard a noise"), ("DumbBot", "that was your thought"), ("Koni", "meow impossible"), ("Lebron", "rare event"), ("DumbBot", "achievement unlocked")],
-    [("DumbBot", "i am speed"), ("Lebron", "you lag typing"), ("Koni", "meow buffering"), ("DumbBot", "dramatic pause"), ("Lebron", "excuses")],
-    [("Lebron", "this is peak nonsense"), ("Koni", "meow peak"), ("DumbBot", "mountain of stupid"), ("Lebron", "we climbed it"), ("Koni", "nya no oxygen")],
-    [("Koni", "meow apology demanded"), ("DumbBot", "for what"), ("Koni", "existing loudly"), ("Lebron", "valid complaint"), ("DumbBot", "sorry for breathing in text")],
-    [("DumbBot", "i’m leaving"), ("Koni", "meow finally"), ("Lebron", "door is imaginary"), ("DumbBot", "i walked into a wall"), ("Koni", "mrrp skill issue")],
-    [("Lebron", "say one smart thing"), ("DumbBot", "one smart thing"), ("Koni", "MEOW GENIUS"), ("Lebron", "i hate loopholes"), ("DumbBot", "i love holes")],
-    [("Koni", "prrr server belongs to me"), ("Lebron", "since when"), ("Koni", "meow since now"), ("DumbBot", "coup successful"), ("Lebron", "i want a recount")]
 ]
+
+AVATARS = {
+    "Koni": KONI_AVATAR,
+    "Lebron": LEBRON_AVATAR,
+    "DumbBot": DUMBBOT_AVATAR
+}
 
 class Argue(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cooldown = False
+        self.webhooks = {}
+
+    async def get_webhook(self, channel, name):
+        key = (channel.id, name)
+
+        if key in self.webhooks:
+            return self.webhooks[key]
+
+        webhooks = await channel.webhooks()
+
+        for webhook in webhooks:
+            if webhook.name == name:
+                self.webhooks[key] = webhook
+                return webhook
+
+        webhook = await channel.create_webhook(name=name)
+        self.webhooks[key] = webhook
+        return webhook
+
+    async def webhook_send(self, channel, name, text):
+        webhook = await self.get_webhook(channel, name)
+
+        await webhook.send(
+            text,
+            username=name,
+            avatar_url=AVATARS.get(name)
+        )
 
     @commands.command(name="argue")
     async def argue(self, ctx):
@@ -56,19 +76,28 @@ class Argue(commands.Cog):
             return await ctx.send("they already arguing bro give them a sec 💀")
 
         self.cooldown = True
-        argument = random.choice(ARGUMENTS)
 
-        await ctx.send("argument started 🍿")
+        try:
+            argument = random.choice(ARGUMENTS)
 
-        for name, text in argument:
-            await asyncio.sleep(random.randint(2, 4))
-            await ctx.send(f"**{name}:** {text}")
+            await ctx.send("argument started 🍿")
 
-        await asyncio.sleep(2)
-        await ctx.send("argument ended. nobody won. everyone got dumber 😭")
+            for name, text in argument:
+                await asyncio.sleep(random.randint(2, 4))
+                await self.webhook_send(ctx.channel, name, text)
 
-        await asyncio.sleep(20)
-        self.cooldown = False
+            await asyncio.sleep(2)
+            await ctx.send("argument ended. nobody won. everyone got dumber 😭")
+
+        except discord.Forbidden:
+            await ctx.send("I need Manage Webhooks permission 💀")
+
+        except Exception as e:
+            await ctx.send(f"Argue error: `{e}`")
+
+        finally:
+            await asyncio.sleep(20)
+            self.cooldown = False
 
 async def setup(bot):
     await bot.add_cog(Argue(bot))
