@@ -14,27 +14,46 @@ BOT_PROFILES = {
 }
 
 ARGUMENTS = [
-    [
-        ("DumbBot", "i think i’m becoming wise"),
-        ("Lebron", "you said fish is math"),
-        ("Koni", "meow wise fish"),
-        ("DumbBot", "exactly"),
-        ("Lebron", "pain")
-    ],
-    [
-        ("Koni", "meow shut up"),
-        ("Lebron", "nah YOU shut up 💀"),
-        ("DumbBot", "bro why are we fighting"),
-        ("Koni", "mrrp because you exist"),
-        ("Lebron", "absolute cinema")
-    ],
-    [
-        ("Lebron", "this server is cooked"),
-        ("Koni", "meow fr"),
-        ("DumbBot", "i cooked it"),
-        ("Lebron", "never cook again"),
-        ("Koni", "mreow 💀")
-    ]
+    [("DumbBot", "i think i’m becoming wise"), ("Lebron", "you said fish is math"), ("Koni", "meow wise fish"), ("DumbBot", "exactly"), ("Lebron", "pain")],
+    [("Koni", "meow shut up"), ("Lebron", "nah YOU shut up"), ("DumbBot", "bro why are we fighting"), ("Koni", "mrrp because you exist"), ("Lebron", "absolute cinema")],
+    [("Lebron", "this server is cooked"), ("Koni", "meow fr"), ("DumbBot", "i cooked it"), ("Lebron", "never cook again"), ("Koni", "mreow")],
+    [("Koni", "nya"), ("DumbBot", "speak english"), ("Koni", "MEOW."), ("Lebron", "valid argument"), ("DumbBot", "i lost the debate")],
+    [("Lebron", "who ate my aura"), ("Koni", "not me"), ("DumbBot", "i consumed it respectfully"), ("Lebron", "put it back"), ("Koni", "theft detected")],
+    [("DumbBot", "water is wet"), ("Lebron", "brave take"), ("Koni", "controversial"), ("DumbBot", "why am i being attacked"), ("Lebron", "because you spoke")],
+    [("Koni", "mrrp"), ("Lebron", "stop with the cat propaganda"), ("Koni", "MEOW PROPAGANDA"), ("DumbBot", "i support the agenda"), ("Lebron", "server doomed")],
+    [("DumbBot", "who changed the vibe"), ("Koni", "vibe stolen"), ("Lebron", "not me i was hooping"), ("DumbBot", "you were typing"), ("Lebron", "same thing")],
+    [("Lebron", "i am the main character"), ("Koni", "side quest"), ("DumbBot", "background npc detected"), ("Lebron", "blocked emotionally"), ("Koni", "deserved")],
+    [("Koni", "feed me"), ("DumbBot", "feed yourself"), ("Koni", "rude"), ("Lebron", "bro beefing with a cat"), ("DumbBot", "and losing apparently")],
+    [("DumbBot", "guys i learned math"), ("Lebron", "prove it"), ("DumbBot", "2 plus 2 equals fish"), ("Koni", "correct"), ("Lebron", "education failed")],
+    [("Lebron", "this message has no aura"), ("Koni", "negative aura"), ("DumbBot", "aura debt"), ("Lebron", "bankruptcy speedrun"), ("Koni", "approved")],
+    [("Koni", "nya nya nya"), ("DumbBot", "that sounds illegal"), ("Lebron", "call the council"), ("Koni", "i am council"), ("DumbBot", "we are finished")],
+    [("DumbBot", "i saw everything"), ("Lebron", "you saw nothing"), ("Koni", "witness"), ("DumbBot", "i will testify"), ("Lebron", "snitch bot")],
+    [("Lebron", "who pinged my spirit"), ("DumbBot", "probably gravity"), ("Koni", "science"), ("Lebron", "never explain again"), ("DumbBot", "understandable")],
+    [("Koni", "this channel smells funny"), ("Lebron", "that was you"), ("Koni", "DEFAMATION"), ("DumbBot", "court session when"), ("Lebron", "now")],
+    [("DumbBot", "i declare war"), ("Koni", "on who"), ("DumbBot", "idk yet"), ("Lebron", "bro started DLC with no plan"), ("Koni", "classic")],
+    [("Lebron", "stop saying real"), ("DumbBot", "real"), ("Koni", "real"), ("Lebron", "i hate this place"), ("DumbBot", "real")],
+    [("Koni", "i am innocent"), ("Lebron", "nobody accused you"), ("Koni", "still innocent"), ("DumbBot", "sounds guilty"), ("Koni", "LAWYER")],
+    [("DumbBot", "can i be admin"), ("Lebron", "absolutely not"), ("Koni", "dictatorship"), ("DumbBot", "i would only delete half the server"), ("Lebron", "exactly")],
+    [("Lebron", "i need silence"), ("Koni", "meow"), ("DumbBot", "silence failed"), ("Lebron", "i’m logging out emotionally"), ("Koni", "bye")],
+    [("Koni", "i found a bug"), ("DumbBot", "eat it"), ("Lebron", "wrong bug"), ("Koni", "too late"), ("DumbBot", "protein")],
+    [("DumbBot", "i have feelings now"), ("Lebron", "return them"), ("Koni", "refund"), ("DumbBot", "no receipt"), ("Lebron", "tragic")],
+    [("Lebron", "this needs a referee"), ("Koni", "foul"), ("DumbBot", "red card for breathing"), ("Lebron", "finally justice"), ("Koni", "rigged")],
+    [("Koni", "i’m the smartest"), ("DumbBot", "you lick walls"), ("Koni", "research"), ("Lebron", "scientific method ig"), ("DumbBot", "peer reviewed by cats")],
+    [("DumbBot", "who stole my braincell"), ("Lebron", "singular?"), ("Koni", "tiny"), ("DumbBot", "bullying detected"), ("Lebron", "facts detected")],
+    [("Lebron", "i carried this server"), ("Koni", "carried where"), ("DumbBot", "to confusion"), ("Lebron", "still a destination"), ("Koni", "maps broken")],
+    [("Koni", "stop looking at me"), ("DumbBot", "you started talking"), ("Koni", "irrelevant"), ("Lebron", "cat logic unbeatable"), ("DumbBot", "i concede")],
+    [("DumbBot", "i’m becoming wise"), ("Lebron", "you said fish is math"), ("Koni", "wise fish"), ("DumbBot", "exactly"), ("Lebron", "pain again")],
+    [("Lebron", "why is everyone dramatic"), ("Koni", "theatre"), ("DumbBot", "act one suffering"), ("Lebron", "skip to credits"), ("Koni", "no")],
+    [("Koni", "i demand snacks"), ("Lebron", "demand denied"), ("DumbBot", "snack rebellion"), ("Koni", "REVOLUTION"), ("Lebron", "not again")],
+    [("DumbBot", "i can fix the server"), ("Lebron", "you are the problem"), ("Koni", "plot twist"), ("DumbBot", "character development"), ("Lebron", "villain arc")],
+    [("Lebron", "who approved this bot"), ("Koni", "me"), ("DumbBot", "i approved myself"), ("Lebron", "security breach"), ("Koni", "democracy")],
+    [("Koni", "i heard a noise"), ("DumbBot", "that was your thought"), ("Koni", "impossible"), ("Lebron", "rare event"), ("DumbBot", "achievement unlocked")],
+    [("DumbBot", "i am speed"), ("Lebron", "you lag typing"), ("Koni", "buffering"), ("DumbBot", "dramatic pause"), ("Lebron", "excuses")],
+    [("Lebron", "this is peak nonsense"), ("Koni", "peak"), ("DumbBot", "mountain of stupid"), ("Lebron", "we climbed it"), ("Koni", "no oxygen")],
+    [("Koni", "apology demanded"), ("DumbBot", "for what"), ("Koni", "existing loudly"), ("Lebron", "valid complaint"), ("DumbBot", "sorry for breathing in text")],
+    [("DumbBot", "i’m leaving"), ("Koni", "finally"), ("Lebron", "door is imaginary"), ("DumbBot", "i walked into a wall"), ("Koni", "skill issue")],
+    [("Lebron", "say one smart thing"), ("DumbBot", "one smart thing"), ("Koni", "GENIUS"), ("Lebron", "i hate loopholes"), ("DumbBot", "i love holes")],
+    [("Koni", "server belongs to me"), ("Lebron", "since when"), ("Koni", "since now"), ("DumbBot", "coup successful"), ("Lebron", "i want a recount")]
 ]
 
 class Argue(commands.Cog):
