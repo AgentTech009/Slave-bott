@@ -5,22 +5,10 @@ import json
 import os
 import asyncio
 
-CONFIG_FILE = "dumbbot_channel.json"
+DUMBBOT_CHANNEL_ID = 1496866222237548697
 
 def get_key():
     return os.getenv("GROQ_API_KEY")
-
-def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "w") as f:
-            json.dump({"channel_id": None}, f)
-
-    with open(CONFIG_FILE, "r") as f:
-        return json.load(f)
-
-def save_config(data):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(data, f, indent=4)
 
 def ask_groq(api_key, message):
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -34,13 +22,11 @@ def ask_groq(api_key, message):
                     "You are a funny dumb Discord chatbot. "
                     "Reply very short. Use silly Gen Z humor. "
                     "Act confused sometimes. Do not be smart unless asked. "
+                    "No long answers. No serious essays. "
                     "Be chaotic but harmless."
                 )
             },
-            {
-                "role": "user",
-                "content": message
-            }
+            {"role": "user", "content": message}
         ],
         "temperature": 1.1,
         "max_tokens": 80
@@ -68,19 +54,6 @@ class DumbBot(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.api_key = get_key()
-        self.config = load_config()
-
-    @commands.command(name="setdumbbot")
-    async def set_dumbbot(self, ctx):
-        self.config["channel_id"] = ctx.channel.id
-        save_config(self.config)
-        await ctx.send(f"Dumb chatbot enabled in {ctx.channel.mention} 🧠💀")
-
-    @commands.command(name="offdumbbot")
-    async def off_dumbbot(self, ctx):
-        self.config["channel_id"] = None
-        save_config(self.config)
-        await ctx.send("Dumb chatbot disabled 💀")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -90,11 +63,11 @@ class DumbBot(commands.Cog):
         if message.content.startswith("."):
             return
 
-        if self.config.get("channel_id") != message.channel.id:
+        if message.channel.id != DUMBBOT_CHANNEL_ID:
             return
 
         if not self.api_key:
-            return await message.channel.send("Groq key missing. Add `GROQ_API_KEY` in Railway variables 💀")
+            return await message.channel.send("Groq key missing in `.env` 💀")
 
         async with message.channel.typing():
             try:
