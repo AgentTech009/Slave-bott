@@ -2,7 +2,7 @@ from discord.ext import commands
 import random
 
 # 🔒 HARD CODED CHANNEL
-RANDOM_CHANNEL_ID = 1499799311096086658
+RANDOM_CHANNEL_ID = 1500165632266735747
 
 # default chance
 CHANCE = 15  
