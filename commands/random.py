@@ -1,11 +1,10 @@
 from discord.ext import commands
 import random
-import json
-import os
 
-CONFIG_FILE = "randomreply_config.json"
+# 🔒 HARD CODED CHANNEL
+RANDOM_CHANNEL_ID = 1499799311096086658
 
-# chance: 1 in X messages → increase number = rarer
+# default chance
 CHANCE = 15  
 
 RANDOM_REPLIES = [
@@ -31,34 +30,18 @@ RANDOM_REPLIES = [
     "this channel needs therapy", "anyway..."
 ]
 
-def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "w") as f:
-            json.dump({"channel_id": None}, f)
-
-    with open(CONFIG_FILE, "r") as f:
-        return json.load(f)
-
-def save_config(data):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
 class RandomReply(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = load_config()
+        self.chance = CHANCE  # 🔥 runtime editable
 
-    @commands.command(name="setrandomreply")
-    async def set_random_reply(self, ctx):
-        self.config["channel_id"] = ctx.channel.id
-        save_config(self.config)
-        await ctx.send("Random reply mode ON 💀")
+    @commands.command(name="chance")
+    async def change_chance(self, ctx, number: int):
+        if number < 1:
+            return await ctx.send("number must be >= 1 💀")
 
-    @commands.command(name="offrandomreply")
-    async def off_random_reply(self, ctx):
-        self.config["channel_id"] = None
-        save_config(self.config)
-        await ctx.send("Random reply mode OFF 😔")
+        self.chance = number
+        await ctx.send(f"chance set to 1 in {number} 😈")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -68,16 +51,10 @@ class RandomReply(commands.Cog):
         if message.content.startswith("."):
             return
 
-        channel_id = self.config.get("channel_id")
-
-        if channel_id is None:
+        if message.channel.id != RANDOM_CHANNEL_ID:
             return
 
-        if message.channel.id != channel_id:
-            return
-
-        # 🎯 random chance trigger
-        if random.randint(1, CHANCE) != 1:
+        if random.randint(1, self.chance) != 1:
             return
 
         try:
