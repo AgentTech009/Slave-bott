@@ -6,7 +6,7 @@ import os
 
 CONFIG_FILE = "koni_config.json"
 
-CAT_AVATAR_URL = "https://cdn.discordapp.com/attachments/1499789770568765571/1499790303555489853/IMG-20260421-WA0051-1.jpg"
+CAT_AVATAR_URL = "https://cdn.discordapp.com/attachments/1500100689924194326/1500100763815252079/IMG-20260421-WA0051-1.jpg?ex=69f73534&is=69f5e3b4&hm=97abec711668fed3434ceed9e7284d4bc9a6fa3cebdd23425f58c81c7b2d658e&"
 
 # BIG DUMB CAT LIST 😈
 MEOWS = [
