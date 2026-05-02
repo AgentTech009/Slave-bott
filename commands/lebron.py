@@ -1,39 +1,11 @@
 from discord.ext import commands
-import json
-import os
 
-CONFIG_FILE = "lebron_channel.json"
-
-def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "w") as f:
-            json.dump({"channel_id": None}, f)
-
-    with open(CONFIG_FILE, "r") as f:
-        return json.load(f)
-
-def save_config(data):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+# 🔒 HARD CODED CHANNEL
+LEBRON_CHANNEL_ID = 1499786227006836757
 
 class Lebron(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = load_config()
-
-    @commands.command(name="setlebron")
-    async def set_lebron(self, ctx):
-        self.config["channel_id"] = ctx.channel.id
-        save_config(self.config)
-
-        await ctx.send("Lebron replies enabled 💀")
-
-    @commands.command(name="offlebron")
-    async def off_lebron(self, ctx):
-        self.config["channel_id"] = None
-        save_config(self.config)
-
-        await ctx.send("Lebron replies disabled 😔")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -43,12 +15,7 @@ class Lebron(commands.Cog):
         if message.content.startswith("."):
             return
 
-        channel_id = self.config.get("channel_id")
-
-        if channel_id is None:
-            return
-
-        if message.channel.id != channel_id:
+        if message.channel.id != LEBRON_CHANNEL_ID:
             return
 
         await message.reply("lebron", mention_author=False)
