@@ -74,7 +74,6 @@ class DateCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.active_users = set()
-        self.nick_lock = asyncio.Lock()
 
     async def get_webhook(self, channel, name):
         try:
@@ -87,29 +86,9 @@ class DateCog(commands.Cog):
 
         return await channel.create_webhook(name=name)
 
-    async def fresh_webhook(self, channel, name):
-        return await channel.create_webhook(name=name)
-
-    async def type_wait(self, channel, speaker_name=None):
-        guild = channel.guild
-        me = guild.me
-        old_nick = me.nick
-
-        async with self.nick_lock:
-            try:
-                if speaker_name:
-                    await me.edit(nick=speaker_name[:32])
-            except Exception:
-                pass
-
-            async with channel.typing():
-                await asyncio.sleep(random.randint(1, 2))
-
-            try:
-                if speaker_name:
-                    await me.edit(nick=old_nick)
-            except Exception:
-                pass
+    async def type_wait(self, channel):
+        async with channel.typing():
+            await asyncio.sleep(random.randint(1, 2))
 
     async def speak(self, channel, name, avatar, content=None, image=None):
         final_content = ""
@@ -125,7 +104,7 @@ class DateCog(commands.Cog):
         if not final_content:
             return None
 
-        await self.type_wait(channel, name)
+        await self.type_wait(channel)
         webhook = await self.get_webhook(channel, name)
 
         try:
@@ -137,7 +116,7 @@ class DateCog(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
         except discord.NotFound:
-            webhook = await self.fresh_webhook(channel, name)
+            webhook = await channel.create_webhook(name=name)
             return await webhook.send(
                 content=final_content,
                 username=name,
@@ -146,7 +125,7 @@ class DateCog(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
         except discord.HTTPException:
-            webhook = await self.fresh_webhook(channel, name)
+            webhook = await channel.create_webhook(name=name)
             return await webhook.send(
                 content=final_content,
                 username=name,
@@ -155,26 +134,11 @@ class DateCog(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
 
-    async def persona_reply(self, msg, name, content="okey"):
-        guild = msg.guild
-        me = guild.me
-        old_nick = me.nick
-
-        async with self.nick_lock:
-            try:
-                await me.edit(nick=name[:32])
-            except Exception:
-                pass
-
-            try:
-                await msg.reply(content, mention_author=False)
-            except Exception:
-                await msg.channel.send(content)
-
-            try:
-                await me.edit(nick=old_nick)
-            except Exception:
-                pass
+    async def persona_reply(self, msg, content="okey"):
+        try:
+            await msg.reply(content, mention_author=False)
+        except Exception:
+            await msg.channel.send(content)
 
     async def button_msg(self, channel, text, view):
         msg = await channel.send(content=text, view=view)
@@ -250,12 +214,12 @@ class DateCog(commands.Cog):
             value, label = choices[msg.content.lower().strip()]
             answers[msg.author.id] = value
 
-            await self.persona_reply(msg, ask_name, "okey")
+            await self.persona_reply(msg, "okey")
 
             if mode == "first":
                 return answers
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.2)
 
             if len(answers) >= len(allowed_ids):
                 return answers
@@ -295,8 +259,10 @@ class DateCog(commands.Cog):
 
             choice = msg.content.lower().strip()
 
+            await self.persona_reply(msg, "okey")
+
             if choice == "fat":
-                await self.persona_reply(msg, "le weightress", "okey")
+                answers[msg.author.id] = "protein"
 
                 await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "FAT??!!")
                 await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "HELL NAH BROTHER.")
@@ -307,14 +273,10 @@ class DateCog(commands.Cog):
                     ROCK_PFP,
                     f"{msg.author.mention} ur order is now **PROTIEN**."
                 )
-
-                answers[msg.author.id] = "protein"
-
             else:
-                await self.persona_reply(msg, "le weightress", "okey")
                 answers[msg.author.id] = "protein"
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.2)
 
             if len(answers) >= len(allowed_ids):
                 return answers
@@ -347,7 +309,7 @@ class DateCog(commands.Cog):
             )
 
         msg = await self.bot.wait_for("message", check=check)
-        await self.persona_reply(msg, "le weightress", "okey")
+        await self.persona_reply(msg, "okey")
 
     @commands.command(name="date")
     async def date(self, ctx, partner: discord.Member = None):
@@ -391,7 +353,13 @@ class DateCog(commands.Cog):
             if accept_view.answers.get(partner.id) != "accept":
                 return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "rejected. bro became soup.")
 
-            restaurant = await self.make_private_channel(ctx.guild, "le-restront", requester, partner, ctx.channel.category)
+            restaurant = await self.make_private_channel(
+                ctx.guild,
+                "le-restront",
+                requester,
+                partner,
+                ctx.channel.category
+            )
 
             await self.speak(
                 ctx.channel,
