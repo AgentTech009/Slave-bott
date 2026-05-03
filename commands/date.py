@@ -377,7 +377,7 @@ class DateCog(commands.Cog):
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nType `yes` or `no`\nno counter: `{no_count}/5`",
+                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nType `yes` \nno",
                     image=TABLE_IMG
                 )
 
