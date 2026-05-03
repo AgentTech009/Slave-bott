@@ -50,7 +50,7 @@ class MemoryLane(commands.Cog):
             if not part:
                 continue
 
-            await asyncio.sleep(random.uniform(2.0, 3.0))
+            await asyncio.sleep(5)
 
             await self.safe_change_nick(guild, name)
 
@@ -65,7 +65,7 @@ class MemoryLane(commands.Cog):
             )
 
             if part == "Athhh....👀":
-                await asyncio.sleep(5)
+                await asyncio.sleep(8)
 
     @commands.command(name="memmorylane")
     @commands.has_permissions(administrator=True)
@@ -102,7 +102,7 @@ class MemoryLane(commands.Cog):
         narrator_webhook = await channel.create_webhook(name=NARRATOR_NAME)
         final_webhook = await channel.create_webhook(name=FINAL_BOY_NAME)
 
-        await asyncio.sleep(15)
+        await asyncio.sleep(5)
 
         script = [
             (NARRATOR_NAME, narrator_webhook, "**8:47**", NARRATOR_PFP, True),
@@ -113,7 +113,7 @@ class MemoryLane(commands.Cog):
             (GIRL_NAME, girl_webhook, "Aahhh aloichuuu...", GIRL_PFP, False),
             (BOY_NAME, boy_webhook, "Enthaaaa👀", BOY_PFP, False),
 
-            (NARRATOR_NAME, narrator_webhook, "**Girl eating porotta while boy is dying out there**", NARRATOR_PFP, True),
+            (NARRATOR_NAME, narrator_webhook, "**The girl went to eat porotta while the boy was dying..**", NARRATOR_PFP, True),
             (NARRATOR_NAME, narrator_webhook, "**15 minutes later**", NARRATOR_PFP, True),
 
             (GIRL_NAME, girl_webhook, "Aahhh athhhh", GIRL_PFP, False),
@@ -137,7 +137,7 @@ class MemoryLane(commands.Cog):
         for name, webhook, message, pfp, narrator in script:
             await self.send_as(channel, webhook, guild, name, message, pfp, narrator)
 
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
 
         await self.fake_typing_only(channel, guild, "someone", 5)
 
@@ -148,10 +148,13 @@ class MemoryLane(commands.Cog):
             "-your nervous little boy.."
         ]
 
-        for line in final_lines:
-            await asyncio.sleep(random.uniform(2.0, 3.0))
+        first = True
 
-            await self.fake_typing_only(channel, guild, FINAL_BOY_NAME, 2)
+        for line in final_lines:
+            await asyncio.sleep(5)
+
+            if not first:
+                await self.fake_typing_only(channel, guild, FINAL_BOY_NAME, 2)
 
             await final_webhook.send(
                 content=line,
@@ -159,6 +162,8 @@ class MemoryLane(commands.Cog):
                 avatar_url=FINAL_BOY_PFP,
                 allowed_mentions=discord.AllowedMentions.none()
             )
+
+            first = False
 
         for webhook in [boy_webhook, girl_webhook, narrator_webhook, final_webhook]:
             try:
