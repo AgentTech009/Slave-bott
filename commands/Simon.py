@@ -2,10 +2,9 @@ from discord.ext import commands
 import discord
 import random
 import asyncio
-import re
 
 SIMON_CHANNEL_ID = 1500168505184485577
-WINNER_ROLE_ID = None  # put role ID here or keep None
+WINNER_ROLE_ID = None
 
 REAL_PREFIX = "Simon says"
 
@@ -60,6 +59,7 @@ class SimonButtonView(discord.ui.View):
         self.message = None
 
         labels = random.sample(BUTTON_WORDS, 5)
+
         if expected not in labels:
             labels[random.randint(0, 4)] = expected
 
@@ -89,10 +89,16 @@ class SimonButtonView(discord.ui.View):
             uid = interaction.user.id
 
             if self.cog.alive and uid not in self.cog.alive:
-                return await interaction.response.send_message("You are eliminated 💀", ephemeral=True)
+                return await interaction.response.send_message(
+                    "You are eliminated 💀",
+                    ephemeral=True
+                )
 
             if self.finished:
-                return await interaction.response.send_message("Round ended lil bro", ephemeral=True)
+                return await interaction.response.send_message(
+                    "Round already ended",
+                    ephemeral=True
+                )
 
             self.got_any_reply = True
 
@@ -105,16 +111,16 @@ class SimonButtonView(discord.ui.View):
                         item.disabled = True
 
                     await interaction.response.edit_message(view=self)
-                    await self.channel.send(f"{interaction.user.mention} +{bonus}")
+                    await self.cog.send_result(self.channel, interaction.user, f"+{bonus}", "Correct button")
                     self.stop()
                 else:
                     self.cog.punish(uid)
-                    await interaction.response.send_message("-1 wrong button 💀", ephemeral=True)
-                    await self.channel.send(f"{interaction.user.mention} -1")
+                    await interaction.response.send_message("-1 wrong button", ephemeral=True)
+                    await self.cog.send_result(self.channel, interaction.user, "-1", "Wrong button")
             else:
                 self.cog.punish(uid)
-                await interaction.response.send_message("-1 fake Simon bait 😭", ephemeral=True)
-                await self.channel.send(f"{interaction.user.mention} -1")
+                await interaction.response.send_message("-1 fake Simon bait", ephemeral=True)
+                await self.cog.send_result(self.channel, interaction.user, "-1", "Fake Simon bait")
 
         return callback
 
@@ -141,6 +147,56 @@ class Simon(commands.Cog):
         self.streaks = {}
         self.memory_words = []
 
+    async def get_webhook(self, channel):
+        webhooks = await channel.webhooks()
+
+        for webhook in webhooks:
+            if webhook.name == "Simon Says":
+                return webhook
+
+        return await channel.create_webhook(name="Simon Says")
+
+    def make_embed(self, title, description, color=discord.Color.blurple()):
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=color
+        )
+        embed.set_footer(text="Simon Says Deluxe")
+        return embed
+
+    async def send_embed(self, channel, title, description, color=discord.Color.blurple(), view=None):
+        embed = self.make_embed(title, description, color)
+
+        try:
+            webhook = await self.get_webhook(channel)
+            return await webhook.send(
+                embed=embed,
+                username="Simon Says",
+                avatar_url="https://cdn-icons-png.flaticon.com/512/942/942748.png",
+                allowed_mentions=discord.AllowedMentions.none(),
+                view=view,
+                wait=True
+            )
+        except:
+            return await channel.send(embed=embed, view=view)
+
+    async def send_result(self, channel, user, score, reason):
+        color = discord.Color.green() if score.startswith("+") else discord.Color.red()
+
+        await self.send_embed(
+            channel,
+            "Score Update",
+            f"{user.mention}\n**Score:** `{score}`\n**Reason:** {reason}",
+            color
+        )
+
+    async def send_info(self, channel, text):
+        await self.send_embed(channel, "Simon Info", text, discord.Color.blurple())
+
+    async def send_error(self, channel, text):
+        await self.send_embed(channel, "Simon Error", text, discord.Color.red())
+
     def add_score(self, uid, amount):
         self.scores[uid] = self.scores.get(uid, 0) + amount
         self.total_scores[uid] = self.total_scores.get(uid, 0) + amount
@@ -162,26 +218,6 @@ class Simon(commands.Cog):
 
         self.add_score(uid, base)
         return base
-
-    async def get_webhook(self, channel):
-        webhooks = await channel.webhooks()
-        for webhook in webhooks:
-            if webhook.name == "Simon Rules":
-                return webhook
-
-        return await channel.create_webhook(name="Simon Rules")
-
-    async def send_rules_webhook(self, channel, rules):
-        try:
-            webhook = await self.get_webhook(channel)
-            await webhook.send(
-                content=rules,
-                username="Simon Rules",
-                avatar_url="https://cdn-icons-png.flaticon.com/512/942/942748.png",
-                allowed_mentions=discord.AllowedMentions.none()
-            )
-        except:
-            await channel.send(rules)
 
     def real_or_fake(self, chance=0.58):
         real = random.random() < chance
@@ -273,7 +309,7 @@ class Simon(commands.Cog):
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
 
-        await ctx.send(question)
+        await self.send_embed(ctx.channel, "Setup", question, discord.Color.gold())
 
         try:
             msg = await self.bot.wait_for("message", timeout=30, check=check)
@@ -287,13 +323,24 @@ class Simon(commands.Cog):
         return value
 
     async def handle_text_like_round(self, ctx, prompt, expected, real, answer_time, round_num, rounds):
-        msg = await ctx.send(f"**Round {round_num}/{rounds}**\n{prompt}")
+        msg = await self.send_embed(
+            ctx.channel,
+            f"Round {round_num}/{rounds}",
+            prompt,
+            discord.Color.gold()
+        )
 
         if random.random() < 0.18:
             await asyncio.sleep(0.7)
             fake_prompt = prompt.replace("Simon says", random.choice(FAKE_PREFIXES), 1)
+
             try:
-                await msg.edit(content=f"**Round {round_num}/{rounds}**\n{fake_prompt}")
+                embed = self.make_embed(
+                    f"Round {round_num}/{rounds}",
+                    fake_prompt,
+                    discord.Color.orange()
+                )
+                await msg.edit(embed=embed)
                 real = False
             except:
                 pass
@@ -321,7 +368,7 @@ class Simon(commands.Cog):
 
                 if message_counts[uid] >= 5:
                     self.add_score(uid, -2)
-                    await ctx.send(f"{msg.author.mention} -2 spam punishment 💀")
+                    await self.send_result(ctx.channel, msg.author, "-2", "Spam punishment")
                     message_counts[uid] = 0
 
                 content = msg.content.strip()
@@ -329,14 +376,14 @@ class Simon(commands.Cog):
                 if real:
                     if content == expected:
                         bonus = self.award_correct(uid)
-                        await ctx.send(f"{msg.author.mention} +{bonus}")
+                        await self.send_result(ctx.channel, msg.author, f"+{bonus}", "Correct answer")
                         round_ended = True
                     else:
                         self.punish(uid)
-                        await ctx.send(f"{msg.author.mention} -1")
+                        await self.send_result(ctx.channel, msg.author, "-1", "Wrong answer")
                 else:
                     self.punish(uid)
-                    await ctx.send(f"{msg.author.mention} -1")
+                    await self.send_result(ctx.channel, msg.author, "-1", "Fake Simon bait")
 
                     if content == expected:
                         round_ended = True
@@ -345,10 +392,15 @@ class Simon(commands.Cog):
                 break
 
         if not got_any_reply:
-            await ctx.send("No response")
+            await self.send_embed(ctx.channel, "Round Ended", "No response", discord.Color.dark_grey())
 
     async def handle_silence_round(self, ctx, prompt, expected, real, answer_time, round_num, rounds):
-        await ctx.send(f"**Round {round_num}/{rounds}**\n{prompt}")
+        await self.send_embed(
+            ctx.channel,
+            f"Round {round_num}/{rounds}",
+            prompt,
+            discord.Color.dark_purple()
+        )
 
         got_any_reply = False
 
@@ -370,19 +422,24 @@ class Simon(commands.Cog):
 
                 if real:
                     self.punish(uid)
-                    await ctx.send(f"{msg.author.mention} -1 you were told to shut up 😭")
+                    await self.send_result(ctx.channel, msg.author, "-1", "Talked during silence round")
                 else:
                     self.punish(uid)
-                    await ctx.send(f"{msg.author.mention} -1 fake Simon bait")
+                    await self.send_result(ctx.channel, msg.author, "-1", "Fake Simon bait")
 
             except asyncio.TimeoutError:
                 break
 
         if not got_any_reply:
-            await ctx.send("No response")
+            await self.send_embed(ctx.channel, "Round Ended", "No response", discord.Color.dark_grey())
 
     async def handle_reaction_round(self, ctx, prompt, expected, real, answer_time, round_num, rounds):
-        msg = await ctx.send(f"**Round {round_num}/{rounds}**\n{prompt}")
+        msg = await self.send_embed(
+            ctx.channel,
+            f"Round {round_num}/{rounds}",
+            prompt,
+            discord.Color.purple()
+        )
 
         for emoji in random.sample(EMOJIS, 5):
             try:
@@ -394,10 +451,7 @@ class Simon(commands.Cog):
         round_ended = False
 
         def check(reaction, user):
-            return (
-                reaction.message.id == msg.id
-                and not user.bot
-            )
+            return reaction.message.id == msg.id and not user.bot
 
         end_time = asyncio.get_event_loop().time() + answer_time
 
@@ -421,14 +475,14 @@ class Simon(commands.Cog):
                 if real:
                     if emoji == expected:
                         bonus = self.award_correct(uid)
-                        await ctx.send(f"{user.mention} +{bonus}")
+                        await self.send_result(ctx.channel, user, f"+{bonus}", "Correct reaction")
                         round_ended = True
                     else:
                         self.punish(uid)
-                        await ctx.send(f"{user.mention} -1")
+                        await self.send_result(ctx.channel, user, "-1", "Wrong reaction")
                 else:
                     self.punish(uid)
-                    await ctx.send(f"{user.mention} -1 fake reaction bait")
+                    await self.send_result(ctx.channel, user, "-1", "Fake reaction bait")
 
                     if emoji == expected:
                         round_ended = True
@@ -437,13 +491,17 @@ class Simon(commands.Cog):
                 break
 
         if not got_any_reply:
-            await ctx.send("No response")
+            await self.send_embed(ctx.channel, "Round Ended", "No response", discord.Color.dark_grey())
 
     async def handle_voice_round(self, ctx, prompt, expected, real, answer_time, round_num, rounds):
-        await ctx.send(f"**Round {round_num}/{rounds}**\n{prompt}")
+        await self.send_embed(
+            ctx.channel,
+            f"Round {round_num}/{rounds}",
+            prompt,
+            discord.Color.teal()
+        )
 
         got_any_reply = False
-        round_ended = False
 
         def check(member, before, after):
             return (
@@ -463,23 +521,22 @@ class Simon(commands.Cog):
             uid = member.id
 
             if self.alive and uid not in self.alive:
-                return await ctx.send("No response")
+                return await self.send_embed(ctx.channel, "Round Ended", "No response", discord.Color.dark_grey())
 
             got_any_reply = True
 
             if real:
                 bonus = self.award_correct(uid)
-                await ctx.send(f"{member.mention} +{bonus}")
-                round_ended = True
+                await self.send_result(ctx.channel, member, f"+{bonus}", "Joined voice")
             else:
                 self.punish(uid)
-                await ctx.send(f"{member.mention} -1 fake VC bait 💀")
+                await self.send_result(ctx.channel, member, "-1", "Fake voice bait")
 
         except asyncio.TimeoutError:
             pass
 
-        if not got_any_reply and not round_ended:
-            await ctx.send("No response")
+        if not got_any_reply:
+            await self.send_embed(ctx.channel, "Round Ended", "No response", discord.Color.dark_grey())
 
     @commands.command(name="simonjoin")
     async def simonjoin(self, ctx):
@@ -487,10 +544,16 @@ class Simon(commands.Cog):
             return
 
         if not self.join_open:
-            return await ctx.send("Join is not open")
+            return await self.send_error(ctx.channel, "Join is not open")
 
         self.players.add(ctx.author.id)
-        await ctx.send(f"{ctx.author.mention} joined Simon")
+
+        await self.send_embed(
+            ctx.channel,
+            "Player Joined",
+            f"{ctx.author.mention} joined Simon",
+            discord.Color.green()
+        )
 
     @commands.command(name="simonleave")
     async def simonleave(self, ctx):
@@ -499,7 +562,13 @@ class Simon(commands.Cog):
 
         self.players.discard(ctx.author.id)
         self.alive.discard(ctx.author.id)
-        await ctx.send(f"{ctx.author.mention} left Simon")
+
+        await self.send_embed(
+            ctx.channel,
+            "Player Left",
+            f"{ctx.author.mention} left Simon",
+            discord.Color.orange()
+        )
 
     @commands.command(name="simonstart")
     async def start(self, ctx):
@@ -507,28 +576,43 @@ class Simon(commands.Cog):
             return
 
         if self.running:
-            return await ctx.send("Simon already running")
+            return await self.send_error(ctx.channel, "Simon already running")
 
         rounds = await self.ask_int(ctx, "How many rounds? `1-50`", 1, 50)
+
         if rounds is None:
-            return await ctx.send("Invalid rounds")
+            return await self.send_error(ctx.channel, "Invalid rounds")
 
         answer_time = await self.ask_int(ctx, "Timer per question in seconds? `3-60`", 3, 60)
+
         if answer_time is None:
-            return await ctx.send("Invalid timer")
+            return await self.send_error(ctx.channel, "Invalid timer")
 
         round_pause = await self.ask_int(ctx, "Break after each question in seconds? `0-30`", 0, 30)
-        if round_pause is None:
-            return await ctx.send("Invalid break time")
 
-        sudden_death_after = await self.ask_int(ctx, "Sudden death starts after which round? `0 = off`", 0, rounds)
+        if round_pause is None:
+            return await self.send_error(ctx.channel, "Invalid break time")
+
+        sudden_death_after = await self.ask_int(
+            ctx,
+            "Sudden death starts after which round? `0 = off`",
+            0,
+            rounds
+        )
+
         if sudden_death_after is None:
-            return await ctx.send("Invalid sudden death round")
+            return await self.send_error(ctx.channel, "Invalid sudden death round")
 
         self.players = set()
         self.join_open = True
 
-        await ctx.send("Join opened for `20 seconds`. Type `.simonjoin` to play.")
+        await self.send_embed(
+            ctx.channel,
+            "Join Phase",
+            "Join opened for `20 seconds`.\nType `.simonjoin` to play.",
+            discord.Color.green()
+        )
+
         await asyncio.sleep(20)
 
         self.join_open = False
@@ -543,24 +627,24 @@ class Simon(commands.Cog):
         self.alive = set()
 
         rules = (
-            "**SIMON SAYS DELUXE RULES**\n"
-            f"Rounds: `{rounds}`\n"
-            f"Answer time: `{answer_time}s`\n"
-            f"Break: `{round_pause}s`\n\n"
+            f"**Rounds:** `{rounds}`\n"
+            f"**Answer time:** `{answer_time}s`\n"
+            f"**Break:** `{round_pause}s`\n\n"
             "**Only exact `Simon says` is real.**\n"
             "`simon says`, `SIMON SAYS`, `Simon Says`, `S1mon says` are fake.\n\n"
             "**Modes:** text, buttons, reactions, reverse, math, memory, silence, VC, edit traps.\n"
             "Text is case sensitive.\n"
-            "Fake Simon means do nothing.\n"
-            "Wrong answer: `-1`\n"
+            "Fake Simon means do nothing.\n\n"
+            "**Scoring**\n"
             "Correct answer: `+1`\n"
+            "Wrong answer: `-1`\n"
             "Streak bonus after 3 correct: extra `+1`\n"
             "Spam 5 messages in one round: `-2`\n\n"
-            f"Sudden death: `{sudden_death_after if sudden_death_after else 'off'}`\n"
+            f"**Sudden death:** `{sudden_death_after if sudden_death_after else 'off'}`\n"
             "Starting in `10 seconds`."
         )
 
-        await self.send_rules_webhook(ctx.channel, rules)
+        await self.send_embed(ctx.channel, "Simon Says Deluxe Rules", rules, discord.Color.blurple())
         await asyncio.sleep(10)
 
         fake_streak = 0
@@ -571,7 +655,13 @@ class Simon(commands.Cog):
 
             if sudden_death_after and round_num == sudden_death_after:
                 self.alive = set(self.players)
-                await ctx.send("**SUDDEN DEATH STARTED** 💀\nWrong move = eliminated.")
+
+                await self.send_embed(
+                    ctx.channel,
+                    "Sudden Death Started",
+                    "Wrong move = eliminated.",
+                    discord.Color.red()
+                )
 
             if self.alive and len(self.alive) <= 1:
                 break
@@ -634,12 +724,20 @@ class Simon(commands.Cog):
 
             if round_type == "button":
                 view = SimonButtonView(self, ctx.channel, expected, real, answer_time)
-                msg = await ctx.send(f"**Round {round_num}/{rounds}**\n{prompt}", view=view)
+
+                msg = await self.send_embed(
+                    ctx.channel,
+                    f"Round {round_num}/{rounds}",
+                    prompt,
+                    discord.Color.gold(),
+                    view=view
+                )
+
                 view.message = msg
                 await view.wait()
 
                 if not view.got_any_reply:
-                    await ctx.send("No response")
+                    await self.send_embed(ctx.channel, "Round Ended", "No response", discord.Color.dark_grey())
 
             elif round_type == "reaction":
                 await self.handle_reaction_round(ctx, prompt, expected, real, answer_time, round_num, rounds)
@@ -657,17 +755,29 @@ class Simon(commands.Cog):
         self.join_open = False
 
         if not self.scores:
-            return await ctx.send("Game ended. No scores.")
+            return await self.send_embed(ctx.channel, "Game Ended", "No scores.", discord.Color.dark_grey())
 
-        leaderboard = "**Final scores**\n"
+        leaderboard = ""
+
         for uid, pts in sorted(self.scores.items(), key=lambda x: x[1], reverse=True):
             leaderboard += f"<@{uid}> — `{pts}`\n"
 
         winner_id = max(self.scores, key=self.scores.get)
         winner_score = self.scores[winner_id]
 
-        await ctx.send(leaderboard)
-        await ctx.send(f"Winner: <@{winner_id}> with `{winner_score}`")
+        await self.send_embed(
+            ctx.channel,
+            "Final Scores",
+            leaderboard,
+            discord.Color.gold()
+        )
+
+        await self.send_embed(
+            ctx.channel,
+            "Winner",
+            f"<@{winner_id}> won with `{winner_score}` points.",
+            discord.Color.green()
+        )
 
         if WINNER_ROLE_ID:
             role = ctx.guild.get_role(WINNER_ROLE_ID)
@@ -676,9 +786,14 @@ class Simon(commands.Cog):
             if role and member:
                 try:
                     await member.add_roles(role, reason="Simon Says winner")
-                    await ctx.send(f"{member.mention} got the winner role")
+                    await self.send_embed(
+                        ctx.channel,
+                        "Winner Role Given",
+                        f"{member.mention} got the winner role.",
+                        discord.Color.green()
+                    )
                 except:
-                    await ctx.send("Could not give winner role")
+                    await self.send_error(ctx.channel, "Could not give winner role")
 
     @commands.command(name="simonstop")
     async def stop(self, ctx):
@@ -687,7 +802,13 @@ class Simon(commands.Cog):
 
         self.running = False
         self.join_open = False
-        await ctx.send("Simon stopped")
+
+        await self.send_embed(
+            ctx.channel,
+            "Simon Stopped",
+            "The game has been stopped.",
+            discord.Color.red()
+        )
 
     @commands.command(name="simonscores")
     async def scores_cmd(self, ctx):
@@ -695,13 +816,19 @@ class Simon(commands.Cog):
             return
 
         if not self.scores:
-            return await ctx.send("No scores yet")
+            return await self.send_embed(ctx.channel, "Scores", "No scores yet.", discord.Color.dark_grey())
 
-        leaderboard = "**Current scores**\n"
+        leaderboard = ""
+
         for uid, pts in sorted(self.scores.items(), key=lambda x: x[1], reverse=True):
             leaderboard += f"<@{uid}> — `{pts}`\n"
 
-        await ctx.send(leaderboard)
+        await self.send_embed(
+            ctx.channel,
+            "Current Scores",
+            leaderboard,
+            discord.Color.gold()
+        )
 
     @commands.command(name="simontop")
     async def simontop(self, ctx):
@@ -709,13 +836,19 @@ class Simon(commands.Cog):
             return
 
         if not self.total_scores:
-            return await ctx.send("No lifetime scores yet")
+            return await self.send_embed(ctx.channel, "Lifetime Scores", "No lifetime scores yet.", discord.Color.dark_grey())
 
-        leaderboard = "**Lifetime Simon leaderboard**\n"
+        leaderboard = ""
+
         for uid, pts in sorted(self.total_scores.items(), key=lambda x: x[1], reverse=True)[:10]:
             leaderboard += f"<@{uid}> — `{pts}`\n"
 
-        await ctx.send(leaderboard)
+        await self.send_embed(
+            ctx.channel,
+            "Lifetime Simon Leaderboard",
+            leaderboard,
+            discord.Color.gold()
+        )
 
 
 async def setup(bot):
