@@ -24,12 +24,11 @@ EIFEL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/15004857
 
 
 class DateButtonView(discord.ui.View):
-    def __init__(self, cog, channel, allowed_ids, options, mode="both", timeout=300):
+    def __init__(self, cog, channel, allowed_ids, options, timeout=120):
         super().__init__(timeout=timeout)
         self.cog = cog
         self.channel = channel
         self.allowed_ids = set(allowed_ids)
-        self.mode = mode
         self.answers = {}
         self.done = asyncio.Event()
         self.message = None
@@ -49,26 +48,9 @@ class DateButtonView(discord.ui.View):
                 await interaction.response.defer()
                 return
 
-            if self.mode == "first" and self.answers:
-                await interaction.response.defer()
-                return
-
             await interaction.response.defer()
-
             self.answers[interaction.user.id] = value
-
-            await self.cog.speak(
-                self.channel,
-                "le weightress",
-                WAITRESS_PFP,
-                f"{interaction.user.mention} picked **{label}**"
-            )
-
-            if self.mode == "first":
-                self.done.set()
-
-            if self.mode == "both" and len(self.answers) >= len(self.allowed_ids):
-                self.done.set()
+            self.done.set()
 
         return callback
 
@@ -79,7 +61,7 @@ class DateButtonView(discord.ui.View):
         if self.message:
             try:
                 await self.message.edit(view=self)
-            except:
+            except Exception:
                 pass
 
 
@@ -87,6 +69,7 @@ class DateCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.active_users = set()
+        self.nick_lock = asyncio.Lock()
 
     async def get_webhook(self, channel, name):
         webhooks = await channel.webhooks()
@@ -97,15 +80,32 @@ class DateCog(commands.Cog):
 
         return await channel.create_webhook(name=name)
 
-    async def type_wait(self, channel):
-        async with channel.typing():
-            await asyncio.sleep(random.randint(1, 2))
+    async def type_wait(self, channel, speaker_name=None):
+        guild = channel.guild
+        me = guild.me
+        old_nick = me.nick
+
+        async with self.nick_lock:
+            try:
+                if speaker_name:
+                    await me.edit(nick=speaker_name[:32])
+            except Exception:
+                pass
+
+            async with channel.typing():
+                await asyncio.sleep(random.randint(1, 2))
+
+            try:
+                if speaker_name:
+                    await me.edit(nick=old_nick)
+            except Exception:
+                pass
 
     async def speak(self, channel, name, avatar, content=None, image=None):
         webhook = await self.get_webhook(channel, name)
 
         if image:
-            await self.type_wait(channel)
+            await self.type_wait(channel, name)
             await webhook.send(
                 content=image,
                 username=name,
@@ -115,7 +115,7 @@ class DateCog(commands.Cog):
             )
 
         if content:
-            await self.type_wait(channel)
+            await self.type_wait(channel, name)
             return await webhook.send(
                 content=content,
                 username=name,
@@ -123,6 +123,18 @@ class DateCog(commands.Cog):
                 wait=True,
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
+
+    async def reply_okey(self, msg, speaker="le weightress"):
+        try:
+            await msg.reply(f"**{speaker}:** okey", mention_author=False)
+        except Exception:
+            await msg.channel.send(f"**{speaker}:** okey")
+
+    async def rock_arrives(self, channel):
+        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "FAT??!!")
+        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "HELL NAH BROTHER.")
+        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "WE NEED PROTIEN FOR THE GAINS.")
+        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "chef bring the muscle plate.")
 
     async def button_msg(self, channel, text, view):
         msg = await channel.send(content=text, view=view)
@@ -143,7 +155,11 @@ class DateCog(commands.Cog):
             )
         }
 
-        return await guild.create_text_channel(name=name, overwrites=overwrites, category=category)
+        return await guild.create_text_channel(
+            name=name,
+            overwrites=overwrites,
+            category=category
+        )
 
     async def wait_until_both_talk_silent(self, channel, p1, p2):
         talked = set()
@@ -159,12 +175,83 @@ class DateCog(commands.Cog):
             msg = await self.bot.wait_for("message", check=check)
             talked.add(msg.author.id)
 
+    async def wait_text_choices(
+        self,
+        channel,
+        users,
+        choices,
+        ask_name,
+        ask_avatar,
+        mode="both",
+        timeout=300
+    ):
+        """
+        choices format:
+        {
+            "protien": ("protein", "Protien"),
+            "protein": ("protein", "Protien"),
+            "fat": ("fat", "FAT")
+        }
+        """
+
+        allowed_ids = {u.id for u in users}
+        answers = {}
+        missing_pinged = set()
+
+        def check(msg):
+            if msg.channel.id != channel.id:
+                return False
+
+            if msg.author.bot:
+                return False
+
+            if msg.author.id not in allowed_ids:
+                return False
+
+            if msg.author.id in answers:
+                return False
+
+            text = msg.content.lower().strip()
+            return text in choices
+
+        while True:
+            try:
+                msg = await asyncio.wait_for(
+                    self.bot.wait_for("message", check=check),
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                return answers
+
+            value, label = choices[msg.content.lower().strip()]
+            answers[msg.author.id] = value
+
+            await self.reply_okey(msg, ask_name)
+
+            if mode == "first":
+                return answers
+
+            await asyncio.sleep(1)
+
+            if len(answers) >= len(allowed_ids):
+                return answers
+
+            for user in users:
+                if user.id not in answers and user.id not in missing_pinged:
+                    missing_pinged.add(user.id)
+                    await self.speak(
+                        channel,
+                        ask_name,
+                        ask_avatar,
+                        f"what abt {user.mention}"
+                    )
+
     async def wait_special_payment_phrase(self, channel, user):
         await self.speak(
             channel,
             "le weightress",
             WAITRESS_PFP,
-            f"{user.mention} uhhh...\nthe machine said **nuh uh**.\ntry the secret rich people method or we washing plates 😭"
+            f"{user.mention} uhhh...\nthe machine said **nuh uh**.\ntry the secret rich people method or we washing plates 😭\n\nsay `face card`"
         )
 
         def check(msg):
@@ -174,7 +261,8 @@ class DateCog(commands.Cog):
                 and "face card" in msg.content.lower()
             )
 
-        await self.bot.wait_for("message", check=check)
+        msg = await self.bot.wait_for("message", check=check)
+        await self.reply_okey(msg, "le weightress")
 
     @commands.command(name="date")
     async def date(self, ctx, partner: discord.Member = None):
@@ -191,7 +279,7 @@ class DateCog(commands.Cog):
             return await ctx.send("one of u already in date jail")
 
         requester = ctx.author
-        allowed = {requester.id, partner.id}
+        allowed_users = [requester, partner]
 
         self.active_users.add(requester.id)
         self.active_users.add(partner.id)
@@ -205,7 +293,6 @@ class DateCog(commands.Cog):
                     ("Accept date", "accept", discord.ButtonStyle.success),
                     ("Reject date", "reject", discord.ButtonStyle.danger)
                 ],
-                mode="both",
                 timeout=120
             )
 
@@ -221,14 +308,30 @@ class DateCog(commands.Cog):
             try:
                 await asyncio.wait_for(accept_view.done.wait(), timeout=120)
             except asyncio.TimeoutError:
-                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "no answer. date evaporated.")
+                return await self.speak(
+                    ctx.channel,
+                    "French guy",
+                    FRENCH_GUY_PFP,
+                    "no answer. date evaporated."
+                )
 
             await accept_view.disable_buttons()
 
             if accept_view.answers.get(partner.id) != "accept":
-                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "rejected. bro became soup.")
+                return await self.speak(
+                    ctx.channel,
+                    "French guy",
+                    FRENCH_GUY_PFP,
+                    "rejected. bro became soup."
+                )
 
-            restaurant = await self.make_private_channel(ctx.guild, "le-restront", requester, partner, ctx.channel.category)
+            restaurant = await self.make_private_channel(
+                ctx.guild,
+                "le-restront",
+                requester,
+                partner,
+                ctx.channel.category
+            )
 
             await self.speak(
                 ctx.channel,
@@ -250,34 +353,41 @@ class DateCog(commands.Cog):
             no_count = 0
 
             while True:
-                seat_view = DateButtonView(
-                    self,
-                    restaurant,
-                    allowed,
-                    [
-                        ("yes seat gud", "yes", discord.ButtonStyle.success),
-                        ("no chair ugly", "no", discord.ButtonStyle.danger)
-                    ],
-                    mode="both",
-                    timeout=300
-                )
-
                 await self.speak(
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nno counter: `{no_count}/5`",
+                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nType `yes` or `no`\nno counter: `{no_count}/5`",
                     image=TABLE_IMG
                 )
 
-                await self.button_msg(restaurant, "seat buttons:", seat_view)
-                await seat_view.done.wait()
-                await seat_view.disable_buttons()
+                seat_answers = await self.wait_text_choices(
+                    restaurant,
+                    allowed_users,
+                    {
+                        "yes": ("yes", "yes"),
+                        "y": ("yes", "yes"),
+                        "no": ("no", "no"),
+                        "n": ("no", "no")
+                    },
+                    "le weightress",
+                    WAITRESS_PFP,
+                    mode="both",
+                    timeout=300
+                )
 
-                if all(v == "yes" for v in seat_view.answers.values()):
+                if len(seat_answers) < 2:
+                    return await self.speak(
+                        restaurant,
+                        "le weightress",
+                        WAITRESS_PFP,
+                        "too slow. chair got bored. date cancelled."
+                    )
+
+                if all(v == "yes" for v in seat_answers.values()):
                     break
 
-                no_count += list(seat_view.answers.values()).count("no")
+                no_count += list(seat_answers.values()).count("no")
 
                 if no_count >= 5:
                     await self.speak(
@@ -302,37 +412,38 @@ class DateCog(commands.Cog):
                 "finally. sit. chair has accepted u."
             )
 
-            menu_view = DateButtonView(
-                self,
-                restaurant,
-                allowed,
-                [
-                    ("Protien", "protein", discord.ButtonStyle.success),
-                    ("FAT", "fat", discord.ButtonStyle.danger)
-                ],
-                mode="both",
-                timeout=300
-            )
-
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "menu time.\nwe have **protien** and **FAT**.\nchef made 2 items then got tired.",
+                "menu time.\nwe have **protien** and **FAT**.\nchef made 2 items then got tired.\n\nType `protien` or `fat`",
                 image=MENU_IMG
             )
 
-            await self.button_msg(restaurant, "food buttons:", menu_view)
-            await menu_view.done.wait()
-            await menu_view.disable_buttons()
+            menu_answers = await self.wait_text_choices(
+                restaurant,
+                allowed_users,
+                {
+                    "protien": ("protein", "Protien"),
+                    "protein": ("protein", "Protien"),
+                    "fat": ("fat", "FAT")
+                },
+                "le weightress",
+                WAITRESS_PFP,
+                mode="both",
+                timeout=300
+            )
 
-            if "fat" in menu_view.answers.values():
-                await self.speak(
+            if len(menu_answers) < 2:
+                return await self.speak(
                     restaurant,
-                    "Dwayne Rock Jhonson",
-                    ROCK_PFP,
-                    "FAT?\nHELL NAH BROTHER WE NEED PROTIEN FOR THE GAINS.\nchef bring the muscle plate."
+                    "le weightress",
+                    WAITRESS_PFP,
+                    "menu timeout. chef left. tragic."
                 )
+
+            if "fat" in menu_answers.values():
+                await self.rock_arrives(restaurant)
 
             await self.speak(
                 restaurant,
@@ -343,73 +454,97 @@ class DateCog(commands.Cog):
 
             await asyncio.sleep(60)
 
-            eat_view = DateButtonView(
-                self,
-                restaurant,
-                allowed,
-                [("i has eaten", "ate", discord.ButtonStyle.success)],
-                mode="both",
-                timeout=600
-            )
-
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "FOOD ARRIVD.\nthis plate has gains and confusion.\nclick when u finish eating ur pixels.",
+                "FOOD ARRIVD.\nthis plate has gains and confusion.\nType `done` when u finish eating ur pixels.",
                 image=PROTEIN_IMG
             )
 
-            await self.button_msg(restaurant, "eat buttons:", eat_view)
-            await eat_view.done.wait()
-            await eat_view.disable_buttons()
-
-            ice_view = DateButtonView(
-                self,
+            eat_answers = await self.wait_text_choices(
                 restaurant,
-                allowed,
-                [("ice creem finished", "done", discord.ButtonStyle.success)],
+                allowed_users,
+                {
+                    "done": ("done", "done"),
+                    "ate": ("done", "done"),
+                    "finished": ("done", "done")
+                },
+                "le weightress",
+                WAITRESS_PFP,
                 mode="both",
                 timeout=600
             )
+
+            if len(eat_answers) < 2:
+                return await self.speak(
+                    restaurant,
+                    "le weightress",
+                    WAITRESS_PFP,
+                    "food got cold. date died of slow typing."
+                )
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "dessert jumpscare.\nice creem arrived with eyeballs. very fancy. very normal.",
+                "dessert jumpscare.\nice creem arrived with eyeballs. very fancy. very normal.\nType `done` when finished.",
                 image=ICECREAM_IMG
             )
 
-            await self.button_msg(restaurant, "ice creem buttons:", ice_view)
-            await ice_view.done.wait()
-            await ice_view.disable_buttons()
-
-            pay_view = DateButtonView(
-                self,
+            ice_answers = await self.wait_text_choices(
                 restaurant,
-                allowed,
-                [
-                    ("she pay", "she", discord.ButtonStyle.danger),
-                    ("i pay", "me", discord.ButtonStyle.success)
-                ],
+                allowed_users,
+                {
+                    "done": ("done", "done"),
+                    "finished": ("done", "done")
+                },
+                "le weightress",
+                WAITRESS_PFP,
+                mode="both",
+                timeout=600
+            )
+
+            if len(ice_answers) < 2:
+                return await self.speak(
+                    restaurant,
+                    "le weightress",
+                    WAITRESS_PFP,
+                    "ice creem melted. so did the relationship."
+                )
+
+            await self.speak(
+                restaurant,
+                "le weightress",
+                WAITRESS_PFP,
+                "BILL TIME.\nthis paper has too many zeroes.\nwho pay.\n\nType `me` or `she`.\nfirst answer decides.",
+                image=BILL_IMG
+            )
+
+            pay_answers = await self.wait_text_choices(
+                restaurant,
+                allowed_users,
+                {
+                    "me": ("me", "me"),
+                    "i pay": ("me", "me"),
+                    "she": ("she", "she"),
+                    "her": ("she", "she")
+                },
+                "le weightress",
+                WAITRESS_PFP,
                 mode="first",
                 timeout=300
             )
 
-            await self.speak(
-                restaurant,
-                "le weightress",
-                WAITRESS_PFP,
-                "BILL TIME.\nthis paper has too many zeroes.\nwho pay.",
-                image=BILL_IMG
-            )
+            if not pay_answers:
+                return await self.speak(
+                    restaurant,
+                    "le weightress",
+                    WAITRESS_PFP,
+                    "nobody paid. police arc unlocked."
+                )
 
-            await self.button_msg(restaurant, "payment buttons:", pay_view)
-            await pay_view.done.wait()
-            await pay_view.disable_buttons()
-
-            if list(pay_view.answers.values())[0] == "she":
+            if list(pay_answers.values())[0] == "she":
                 await self.speak(
                     restaurant,
                     "Dwayne Rock Jhonson",
@@ -453,7 +588,13 @@ class DateCog(commands.Cog):
                 image=FACE_CARD_IMG
             )
 
-            outside = await self.make_private_channel(ctx.guild, "le-outside", requester, partner, ctx.channel.category)
+            outside = await self.make_private_channel(
+                ctx.guild,
+                "le-outside",
+                requester,
+                partner,
+                ctx.channel.category
+            )
 
             await self.speak(
                 restaurant,
@@ -472,31 +613,39 @@ class DateCog(commands.Cog):
 
             await self.wait_until_both_talk_silent(outside, requester, partner)
 
-            taxi_view = DateButtonView(
-                self,
-                outside,
-                allowed,
-                [
-                    ("aifil tawar", "tower", discord.ButtonStyle.success),
-                    ("house", "house", discord.ButtonStyle.danger)
-                ],
-                mode="first",
-                timeout=300
-            )
-
             await self.speak(
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                "get in loser.\nwhere we going.\nfirst click decides because democracy got tired.",
+                "get in loser.\nwhere we going.\nType `aifil tawar` or `house`.\nfirst answer decides because democracy got tired.",
                 image=TAXI_IMG
             )
 
-            await self.button_msg(outside, "taxi buttons:", taxi_view)
-            await taxi_view.done.wait()
-            await taxi_view.disable_buttons()
+            taxi_answers = await self.wait_text_choices(
+                outside,
+                allowed_users,
+                {
+                    "aifil tawar": ("tower", "aifil tawar"),
+                    "eiffel tower": ("tower", "aifil tawar"),
+                    "tower": ("tower", "aifil tawar"),
+                    "house": ("house", "house"),
+                    "home": ("house", "house")
+                },
+                "le taxi driver",
+                TAXI_PFP,
+                mode="first",
+                timeout=300
+            )
 
-            if list(taxi_view.answers.values())[0] == "house":
+            if not taxi_answers:
+                return await self.speak(
+                    outside,
+                    "le taxi driver",
+                    TAXI_PFP,
+                    "no destination. taxi exploded emotionally."
+                )
+
+            if list(taxi_answers.values())[0] == "house":
                 await self.speak(
                     outside,
                     "Dwayne Rock Jhonson",
@@ -513,7 +662,13 @@ class DateCog(commands.Cog):
 
             await asyncio.sleep(30)
 
-            tower = await self.make_private_channel(ctx.guild, "aifal-tower", requester, partner, ctx.channel.category)
+            tower = await self.make_private_channel(
+                ctx.guild,
+                "aifal-tower",
+                requester,
+                partner,
+                ctx.channel.category
+            )
 
             await self.speak(
                 outside,
@@ -532,30 +687,36 @@ class DateCog(commands.Cog):
 
             await asyncio.sleep(300)
 
-            end_view = DateButtonView(
-                self,
-                tower,
-                allowed,
-                [
-                    ("kiss and end date", "kiss", discord.ButtonStyle.success),
-                    ("no kiss ending", "no_kiss", discord.ButtonStyle.danger)
-                ],
-                mode="both",
-                timeout=300
-            )
-
             await self.speak(
                 tower,
                 "French guy",
                 FRENCH_GUY_PFP,
-                "final boss choice.\nchoose ending.\nno kiss ending exists but it is suspicious."
+                "final boss choice.\nchoose ending.\nType `kiss` or `no kiss`.\nno kiss ending exists but it is suspicious."
             )
 
-            await self.button_msg(tower, "ending buttons:", end_view)
-            await end_view.done.wait()
-            await end_view.disable_buttons()
+            end_answers = await self.wait_text_choices(
+                tower,
+                allowed_users,
+                {
+                    "kiss": ("kiss", "kiss"),
+                    "no kiss": ("no_kiss", "no kiss"),
+                    "no": ("no_kiss", "no kiss")
+                },
+                "French guy",
+                FRENCH_GUY_PFP,
+                mode="both",
+                timeout=300
+            )
 
-            if "no_kiss" in end_view.answers.values():
+            if len(end_answers) < 2:
+                return await self.speak(
+                    tower,
+                    "French guy",
+                    FRENCH_GUY_PFP,
+                    "ending timeout. romance buffer crashed."
+                )
+
+            if "no_kiss" in end_answers.values():
                 await self.speak(
                     tower,
                     "Dwayne Rock Jhonson",
