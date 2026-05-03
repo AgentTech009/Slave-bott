@@ -4,39 +4,38 @@ from datetime import datetime, timezone
 
 LOG_CHANNEL_ID = 1500403352763236382
 
-# Put only the 2 user IDs you want to track
 TRACKED_USERS = [
-    1496825794364702812,
-    1496495520120569880
+    123456789012345678,  # your id
+    987654321098765432   # other person id
 ]
 
 
 class PresenceLogger(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.last_status = {}
+
+    def get_status_info(self, status):
+        status = str(status)
+
+        if status == "online":
+            return "🟢 Online", discord.Color.green()
+        elif status == "offline":
+            return "⚫ Offline", discord.Color.dark_grey()
+        elif status == "idle":
+            return "🌙 Idle", discord.Color.gold()
+        elif status == "dnd":
+            return "⛔ Do Not Disturb", discord.Color.red()
+        else:
+            return f"❓ {status}", discord.Color.blurple()
 
     def make_embed(self, member, before_status, after_status):
         now = datetime.now(timezone.utc)
 
-        if str(after_status) == "online":
-            color = discord.Color.green()
-            title = "User Online"
-        elif str(after_status) == "offline":
-            color = discord.Color.red()
-            title = "User Offline"
-        elif str(after_status) == "idle":
-            color = discord.Color.gold()
-            title = "User Idle"
-        elif str(after_status) == "dnd":
-            color = discord.Color.purple()
-            title = "User DND"
-        else:
-            color = discord.Color.blurple()
-            title = "Status Changed"
+        before_text, _ = self.get_status_info(before_status)
+        after_text, color = self.get_status_info(after_status)
 
         embed = discord.Embed(
-            title=title,
+            title="Presence Update",
             color=color,
             timestamp=now
         )
@@ -48,19 +47,19 @@ class PresenceLogger(commands.Cog):
         )
 
         embed.add_field(
-            name="Change",
-            value=f"`{before_status}` → `{after_status}`",
+            name="Status Change",
+            value=f"{before_text} → {after_text}",
             inline=False
         )
 
         embed.add_field(
-            name="Exact Time",
+            name="Time",
             value=f"<t:{int(now.timestamp())}:F>\n<t:{int(now.timestamp())}:R>",
             inline=False
         )
 
         embed.set_thumbnail(url=member.display_avatar.url)
-        embed.set_footer(text="Presence Logger")
+        embed.set_footer(text="Live Presence Tracker")
 
         return embed
 
@@ -72,11 +71,8 @@ class PresenceLogger(commands.Cog):
         before_status = str(before.status)
         after_status = str(after.status)
 
+        # only log if actually changed
         if before_status == after_status:
-            return
-
-        # Only log online/offline
-        if after_status not in ["online", "offline"]:
             return
 
         channel = self.bot.get_channel(LOG_CHANNEL_ID)
@@ -87,7 +83,8 @@ class PresenceLogger(commands.Cog):
             except:
                 return
 
-        await channel.send(embed=self.make_embed(after, before_status, after_status))
+        embed = self.make_embed(after, before_status, after_status)
+        await channel.send(embed=embed)
 
 
 async def setup(bot):
