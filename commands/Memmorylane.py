@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
 import asyncio
+import random
 
-INSTAGRAM_DEFAULT_PFP = "https://i.imgur.com/8Km9tLL.png"
+PFP_URL = "https://cdn.discordapp.com/attachments/1500472877210927197/1500564011161223229/images-12.jpg?ex=69f8e4a3&is=69f79323&hm=d603cc0c2c1f531a0f6b010f21cf42850dd53e661bb1766996c4d4b559b3669c&"
 
 
 class MemoryLane(commands.Cog):
@@ -10,28 +11,37 @@ class MemoryLane(commands.Cog):
         self.bot = bot
 
     async def set_bot_nick(self, guild, name):
-        me = guild.me
         try:
-            await me.edit(nick=name)
-        except discord.Forbidden:
-            pass
-        except discord.HTTPException:
+            await guild.me.edit(nick=name)
+        except:
             pass
 
-    async def send_as(self, channel, webhook, guild, character_name, message):
-        await self.set_bot_nick(guild, character_name)
+    def typing_time(self, msg):
+        base = len(msg) * 0.12
+        nervous_pause = random.uniform(1.5, 3.5)
+        return max(2.5, min(base + nervous_pause, 10))
 
-        typing_time = max(1.5, min(len(message) * 0.08, 6))
+    async def send_as(self, channel, webhook, guild, name, text):
+        parts = text.split("\n")
 
-        async with channel.typing():
-            await asyncio.sleep(typing_time)
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
 
-        await webhook.send(
-            content=message,
-            username=character_name,
-            avatar_url=INSTAGRAM_DEFAULT_PFP,
-            allowed_mentions=discord.AllowedMentions.none()
-        )
+            await self.set_bot_nick(guild, name)
+
+            async with channel.typing():
+                await asyncio.sleep(self.typing_time(part))
+
+            await webhook.send(
+                content=part,
+                username=name,
+                avatar_url=PFP_URL,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+
+            await asyncio.sleep(random.uniform(0.8, 1.8))
 
     @commands.command(name="memmorylane")
     @commands.has_permissions(administrator=True)
@@ -50,6 +60,7 @@ class MemoryLane(commands.Cog):
                 send_messages=True,
                 manage_channels=True,
                 manage_webhooks=True,
+                manage_nicknames=True,
                 read_message_history=True
             )
         }
@@ -61,42 +72,83 @@ class MemoryLane(commands.Cog):
 
         await ctx.send(f"🌙 Memory lane created. Enter {channel.mention}")
 
-        webhook = await channel.create_webhook(name="Memory Lane")
+        boy_webhook = await channel.create_webhook(name="A boy")
+        girl_webhook = await channel.create_webhook(name="A girl")
+        narrator_webhook = await channel.create_webhook(name="Narrator")
 
         await asyncio.sleep(5)
 
         script = [
-            ("A boy", "Mmh\nPinneh ondello"),
-            ("A girl", "Aahmm"),
-            ("A boy", "Neeyoru reply aloicho... 👀"),
-            ("A girl", "Aahhh aloichuuu..."),
-            ("A boy", "Enthaaaa👀"),
-            ("narrator", "**Girl eating porotta while boy is dying out there**"),
-            ("narrator", "**15 minutes later**"),
-            ("A girl", "Aahhh athhhh"),
-            ("A boy", "Athhh....👀"),
-            ("A girl", "Enikkmm ninnee ishtavaaa"),
-            ("A boy", "Ohhh 👀👀\nYay"),
-            ("A girl", "Mhmmm😂"),
-            ("A boy", "Pinneh enna kaichooo..."),
-            ("narrator", "**And right there.. That was the beginning of one of God's most beautiful love stories...**")
+            ("Narrator", narrator_webhook, "**8:47**"),
+            ("A boy", boy_webhook, "Mmh\nPinneh ondello"),
+            ("A girl", girl_webhook, "Aahmm"),
+            ("A boy", boy_webhook, "Neeyoru reply aloicho... 👀"),
+            ("A girl", girl_webhook, "Aahhh aloichuuu..."),
+            ("A boy", boy_webhook, "Enthaaaa👀"),
+
+            ("Narrator", narrator_webhook, "**Girl eating porotta while boy is dying out there**"),
+            ("Narrator", narrator_webhook, "**15 minutes later**"),
+
+            ("A girl", girl_webhook, "Aahhh athhhh"),
+            ("A boy", boy_webhook, "Athhh....👀"),
+            ("A girl", girl_webhook, "Enikkmm ninnee ishtavaaa"),
+            ("A boy", boy_webhook, "Ohhh 👀👀\nYay"),
+            ("A girl", girl_webhook, "Mhmmm😂"),
+            ("A boy", boy_webhook, "Pinneh enna kaichooo..."),
+
+            (
+                "Narrator",
+                narrator_webhook,
+                "And right there..\n"
+                "That was the beginning of..\n"
+                "one of gods most beautiful love stories...\n"
+                "Babyy..\n"
+                "I will always be with you🥹🥹\n"
+                "I WILL ALWAYS LOVE YOU🥹🥹\n"
+                "-your nervous little boy.."
+            )
         ]
 
-        for character, message in script:
-            if character == "narrator":
-                await self.set_bot_nick(guild, "Narrator")
-                async with channel.typing():
-                    await asyncio.sleep(2)
-                await channel.send(message)
-            else:
-                await self.send_as(channel, webhook, guild, character, message)
+        for name, webhook, message in script:
+            await send_typing_and_message(channel, webhook, guild, name, message)
+            await asyncio.sleep(random.uniform(1, 2))
 
-            await asyncio.sleep(1)
+        for webhook in [boy_webhook, girl_webhook, narrator_webhook]:
+            try:
+                await webhook.delete()
+            except:
+                pass
+
+
+async def send_typing_and_message(channel, webhook, guild, name, text):
+    parts = text.split("\n")
+
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
 
         try:
-            await webhook.delete()
-        except discord.HTTPException:
+            await guild.me.edit(nick=name)
+        except:
             pass
+
+        typing_seconds = max(
+            2.5,
+            min(len(part) * 0.14 + random.uniform(2, 4), 12)
+        )
+
+        async with channel.typing():
+            await asyncio.sleep(typing_seconds)
+
+        await webhook.send(
+            content=part,
+            username=name,
+            avatar_url=PFP_URL,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
+
+        await asyncio.sleep(random.uniform(0.8, 1.8))
 
 
 async def setup(bot):
