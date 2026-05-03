@@ -1,50 +1,63 @@
 import discord
 from discord.ext import commands
 import asyncio
-import random
 
-# Optional: set to a channel ID if .date should only work there
 DATE_COMMAND_CHANNEL_ID = None
 
-FRENCH_GUY_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472967065243708/IMG_20260503_172432.jpg?ex=69f88fd8&is=69f73e58&hm=85414fb9f7a316237a61efaef30e93785a9074d137c2c120affe5dcd4656dd93&"
-WAITRESS_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472966750801962/IMG_20260503_172534.jpg?ex=69f88fd8&is=69f73e58&hm=1f468c4fbebef050e14baee1aa47a9c1b0af40eabf7e2e8f34310bedc116a13c&"
-ROCK_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472966377640067/images-1.jpg?ex=69f88fd8&is=69f73e58&hm=652e0ae389d9030d6748869ece76c42de8732924f1390dad59622d9294ff0846&"
-TAXI_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472966138433596/images-2.jpg?ex=69f88fd8&is=69f73e58&hm=4579cbcaef50e7f12ff09e8d92a90cf2f078465a4e2e823c14083416640e85e8&"
+# PASTE YOUR IMAGE LINKS HERE
+FRENCH_GUY_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485689928585367/IMG_20260503_172432.jpg?ex=69f89bb2&is=69f74a32&hm=54e8301b787f2b14cbab8af8ffaaf82affa038e57d258ec4e4de3f843e19ae38&"
+WAITRESS_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485690251804943/IMG_20260503_172534.jpg?ex=69f89bb2&is=69f74a32&hm=cfd1ded3cfd73b3962ac94cc3bd2a9c7ea397ee222d86e27559f216e7e9ada24&"
+ROCK_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485690553663599/images-1.jpg?ex=69f89bb2&is=69f74a32&hm=286c96be0388932f09cefa9fc1ba5ece597974b5fbab5b8d20234a76021803a4&"
+TAXI_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485690964840650/images-2.jpg?ex=69f89bb2&is=69f74a32&hm=a58d97f879486b70a911b4febea22bd5bffef260b74597e07104b8618d2845ea&"
 
-RESTAURANT_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472965857546240/images-3.jpg?ex=69f88fd8&is=69f73e58&hm=d23d2603416fdf634de2329418798fcc6bdbecb9b18ade0134c3693bdfcbf608&"
-TABLE_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472960719261716/images-4.jpg?ex=69f88fd7&is=69f73e57&hm=b98a3923c8ccc984c00e4255ada9572b8e8ade7e55923d4cc40467aeb44e25ee&"
-MENU_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472959653908681/IMG_20260503_173009.jpg?ex=69f88fd7&is=69f73e57&hm=940f7a43cb63229c7719edf4a8ffad97411b979e7d92f447f7d2c9a542b28f64&"
-PROTEIN_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472958831951922/images-7.jpg?ex=69f88fd6&is=69f73e56&hm=aa92e8a7196f1c27cd39d8c72ae04ad500a06bc2ecaa89c394b5b5c2a71753e9&"
-ICECREAM_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472959222153316/images-5.jpg?ex=69f88fd6&is=69f73e56&hm=bd08067d9f5d199d05792f4fad39ca6049d1ddcab593b80ab5d61dea0ae2a843&"
-BILL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472960383979681/IMG_20260503_173230.jpg?ex=69f88fd7&is=69f73e57&hm=f2413bc7733a6bf1864b63193716bf083594d5a7664c1d08870e99822cfc1398&"
-DECLINED_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472958521446470/images-8.jpg?ex=69f88fd6&is=69f73e56&hm=e708feb064fabb3b51b5110a7faa35e8ec1aca0a6917be4b025ecb5054fe29c6&"
-FACE_CARD_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472959947640934/images-6.jpg?ex=69f88fd7&is=69f73e57&hm=505ba4fde0977c35ab63db638d1d9c0fce3230b6d05e9a43137e6192e2285ee1&"
-OUTSIDE_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472958198747286/images-9.jpg?ex=69f88fd6&is=69f73e56&hm=edc75e9262e483b597f2a3ce8852eecc9caa49cb1e99447a5fc05eb22287bad1&"
-TAXI_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472957938569276/images-10.jpg?ex=69f88fd6&is=69f73e56&hm=64225e45a164e0c9880c5752544b1e66f5cc4f0a2f5432524fed36e2f2bdf51a&"
-EIFEL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500472957602893935/eiffel-tower-night.jpg?ex=69f88fd6&is=69f73e56&hm=cf3c28b806062424ad22816e5351716aae26c64c999d9b2e346ca84bbc1efc24&"
+RESTAURANT_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485691216367878/images-3.jpg?ex=69f89bb2&is=69f74a32&hm=fe3cbfb764752a764980e59c6ba5453cb8727b446e2680327f917de58e1c26ce&"
+TABLE_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485691493060688/images-4.jpg?ex=69f89bb2&is=69f74a32&hm=c760dae84c49249b44a61227472858cd74193dc5adc8b327283272b8f039b7a3&"
+MENU_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485691854032946/IMG_20260503_173009.jpg?ex=69f89bb2&is=69f74a32&hm=6c66bc20f824b1647acdb05820a463533f7e5777c6f1026f47e1ee5b4cc5bc4e&"
+PROTEIN_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485704705114375/images-7.jpg?ex=69f89bb5&is=69f74a35&hm=d27f738a15660d8da36930d0da310b4514c01403e4a16162df953f030a5717a1&"
+ICECREAM_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485692118143046/images-5.jpg?ex=69f89bb2&is=69f74a32&hm=a74f0750342ef3952c22cf50d103858c12e472fda1fbe028f1022adec4adbecf&"
+BILL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485692478722118/IMG_20260503_173230.jpg?ex=69f89bb2&is=69f74a32&hm=2bd5c7b3661cb6b411952c402c887e93f853f9c9f6db34607c97f8a03d9bd890&"
+DECLINED_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485705011429427/images-8.jpg?ex=69f89bb5&is=69f74a35&hm=e6d47f47057d9d68e9e26b3f8fda417a09984699f890f675dca9c70c1e42c77f&"
+FACE_CARD_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485692789362818/images-6.jpg?ex=69f89bb2&is=69f74a32&hm=82d4bc32692e0de4824bba71448aedab0fd17d17c63fe6f6872a92e2d152110b&"
+OUTSIDE_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485705275543552/images-9.jpg?ex=69f89bb5&is=69f74a35&hm=5646225a361823e398103c2fed7739bf124e50a24f91b2e2611faffc7df48af6&"
+TAXI_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485705560752219/images-10.jpg?ex=69f89bb5&is=69f74a35&hm=a0344950f54bbb3c19e89a164294ae57f0d1f031fecb21b8d1f1b1150f0aba6c&"
+EIFEL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/1500485705917399103/eiffel-tower-night.jpg?ex=69f89bb5&is=69f74a35&hm=8716ae951e23070054945ddee117e960d55f50ae2c688182d4ac867cfb3b48eb&"
 
 
 class DateButtonView(discord.ui.View):
-    def __init__(self, allowed_ids, options, timeout=300):
+    def __init__(self, allowed_ids, options, mode="both", timeout=300):
         super().__init__(timeout=timeout)
-        self.allowed_ids = allowed_ids
+        self.allowed_ids = set(allowed_ids)
+        self.mode = mode
         self.answers = {}
         self.done = asyncio.Event()
 
         for label, value, style in options:
-            btn = discord.ui.Button(label=label, style=style)
-            btn.callback = self.make_callback(value)
-            self.add_item(btn)
+            button = discord.ui.Button(label=label, style=style)
+            button.callback = self.make_callback(value)
+            self.add_item(button)
 
     def make_callback(self, value):
         async def callback(interaction: discord.Interaction):
             if interaction.user.id not in self.allowed_ids:
-                return await interaction.response.send_message("This date is not for you gang 💀", ephemeral=True)
+                return await interaction.response.send_message(
+                    "This date is not for you gang 💀",
+                    ephemeral=True
+                )
+
+            if self.mode == "first" and self.answers:
+                return await interaction.response.send_message(
+                    "Too late. Someone already picked 😭",
+                    ephemeral=True
+                )
 
             self.answers[interaction.user.id] = value
+
             await interaction.response.send_message("Choice locked ✅", ephemeral=True)
 
-            if len(self.answers) >= len(self.allowed_ids):
+            if self.mode == "first":
+                self.done.set()
+
+            if self.mode == "both" and len(self.answers) >= len(self.allowed_ids):
                 self.done.set()
 
         return callback
@@ -56,39 +69,51 @@ class DateCog(commands.Cog):
         self.active_users = set()
 
     async def get_webhook(self, channel, name):
-        hooks = await channel.webhooks()
-        for hook in hooks:
-            if hook.name == name:
-                return hook
+        webhooks = await channel.webhooks()
+
+        for webhook in webhooks:
+            if webhook.name == name:
+                return webhook
+
         return await channel.create_webhook(name=name)
 
-    async def speak(self, channel, name, avatar, content=None, image=None, view=None):
-        hook = await self.get_webhook(channel, name)
+    async def speak(self, channel, name, avatar, content=None, image=None):
+        webhook = await self.get_webhook(channel, name)
 
         if image:
             content = f"{content}\n{image}" if content else image
 
-        return await hook.send(
+        return await webhook.send(
             content=content,
             username=name,
             avatar_url=avatar,
-            view=view,
             wait=True,
             allowed_mentions=discord.AllowedMentions(users=True)
         )
 
+    async def button_msg(self, channel, text, view):
+        return await channel.send(content=text, view=view)
+
     async def make_private_channel(self, guild, name, p1, p2, category=None):
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            p1: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
-            p2: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
+            p1: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True
+            ),
+            p2: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True
+            ),
             guild.me: discord.PermissionOverwrite(
                 view_channel=True,
                 send_messages=True,
                 manage_channels=True,
                 manage_webhooks=True,
                 read_message_history=True
-            ),
+            )
         }
 
         return await guild.create_text_channel(
@@ -97,14 +122,14 @@ class DateCog(commands.Cog):
             category=category
         )
 
-    async def wait_until_both_talk(self, channel, p1, p2, reason_text):
+    async def wait_until_both_talk(self, channel, p1, p2, text):
         talked = set()
 
         await self.speak(
             channel,
             "le weightress",
             WAITRESS_PFP,
-            f"{reason_text}\n\nBoth of you type literally anything here so I know you are present. Random yapping after this will be ignored unless I ask for it."
+            f"{text}\n\nBoth of you type any message here once. Normal chat after that will be ignored unless I ask."
         )
 
         def check(msg):
@@ -123,7 +148,7 @@ class DateCog(commands.Cog):
             channel,
             "le weightress",
             WAITRESS_PFP,
-            f"{user.mention} say this exact sentence or we are washing dishes till 2042:\n`lemme scan my face card`"
+            f"{user.mention}, say this exact sentence:\n`lemme scan my face card`"
         )
 
         def check(msg):
@@ -134,14 +159,6 @@ class DateCog(commands.Cog):
             )
 
         await self.bot.wait_for("message", check=check)
-
-    async def cleanup_later(self, *channels):
-        await asyncio.sleep(15)
-        for ch in channels:
-            try:
-                await ch.delete()
-            except:
-                pass
 
     @commands.command(name="date")
     async def date(self, ctx, partner: discord.Member = None):
@@ -155,25 +172,22 @@ class DateCog(commands.Cog):
             return await ctx.send("Pick a real person bro 😭")
 
         if ctx.author.id in self.active_users or partner.id in self.active_users:
-            return await ctx.send("One of you is already in a date. Scandalous.")
+            return await ctx.send("One of you is already in a date.")
 
-        self.active_users.add(ctx.author.id)
+        requester = ctx.author
+        allowed = {requester.id, partner.id}
+
+        self.active_users.add(requester.id)
         self.active_users.add(partner.id)
 
-        restaurant = None
-        outside = None
-        tower = None
-
         try:
-            requester = ctx.author
-            allowed = {requester.id, partner.id}
-
             accept_view = DateButtonView(
                 {partner.id},
                 [
                     ("Accept date", "accept", discord.ButtonStyle.success),
-                    ("Reject date", "reject", discord.ButtonStyle.danger),
+                    ("Reject date", "reject", discord.ButtonStyle.danger)
                 ],
+                mode="both",
                 timeout=120
             )
 
@@ -183,17 +197,23 @@ class DateCog(commands.Cog):
                 FRENCH_GUY_PFP,
                 f"{partner.mention}, bonjour. {requester.mention} has requested one extremely suspicious fancy date.\n\n"
                 "Click **Accept date** to enter romance lore.\n"
-                "Click **Reject date** to publicly destroy bro.",
-                view=accept_view
+                "Click **Reject date** to publicly destroy bro."
             )
+
+            button_message = await self.button_msg(ctx.channel, "Choose below:", accept_view)
 
             try:
                 await asyncio.wait_for(accept_view.done.wait(), timeout=120)
             except asyncio.TimeoutError:
                 return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "No answer. Date cancelled. Pain.")
 
+            try:
+                await button_message.delete()
+            except:
+                pass
+
             if accept_view.answers.get(partner.id) != "accept":
-                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "Rejected. Bro got cooked medium rare.")
+                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "Rejected. Bro got cooked.")
 
             restaurant = await self.make_private_channel(
                 ctx.guild,
@@ -207,15 +227,14 @@ class DateCog(commands.Cog):
                 ctx.channel,
                 "French guy",
                 FRENCH_GUY_PFP,
-                f"Magnifique. {requester.mention} {partner.mention}, kindly move to {restaurant.mention}.\n"
-                "The restaurant is ready and the staff is only mildly unstable."
+                f"Magnifique. {requester.mention} {partner.mention}, kindly move to {restaurant.mention}."
             )
 
             await self.speak(
                 restaurant,
                 "French guy",
                 FRENCH_GUY_PFP,
-                f"Welcome to **le restront**.\nTonight you will experience luxury, protein, emotional damage and maybe tax fraud.",
+                "Welcome to **le restront**.\nTonight includes luxury, protein, romance and financial crime.",
                 image=RESTAURANT_IMG
             )
 
@@ -223,7 +242,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 requester,
                 partner,
-                "Please confirm your existence before I show you the seat."
+                "Confirm your existence before I show you the seat."
             )
 
             no_count = 0
@@ -233,8 +252,9 @@ class DateCog(commands.Cog):
                     allowed,
                     [
                         ("Yes this seat is okay", "yes", discord.ButtonStyle.success),
-                        ("No this seat sucks", "no", discord.ButtonStyle.danger),
+                        ("No this seat sucks", "no", discord.ButtonStyle.danger)
                     ],
+                    mode="both",
                     timeout=300
                 )
 
@@ -242,12 +262,17 @@ class DateCog(commands.Cog):
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    "Here is your romantic table. Is this seat okay?\n\nBoth of you must choose. You may say no only 5 total times before I throw you into the street.",
-                    image=TABLE_IMG,
-                    view=seat_view
+                    "Here is your romantic table. Is this seat okay?\n\nBoth must choose. You can say no only 5 total times before I throw you out.",
+                    image=TABLE_IMG
                 )
 
+                btn = await self.button_msg(restaurant, "Seat choice:", seat_view)
                 await seat_view.done.wait()
+
+                try:
+                    await btn.delete()
+                except:
+                    pass
 
                 if all(v == "yes" for v in seat_view.answers.values()):
                     break
@@ -259,31 +284,31 @@ class DateCog(commands.Cog):
                         restaurant,
                         "le weightress",
                         WAITRESS_PFP,
-                        "ENOUGH. Five no's. OUT. Go eat air."
+                        "ENOUGH. Five no's. OUT. Go eat oxygen."
                     )
-                    await self.cleanup_later(restaurant)
                     return
 
                 await self.speak(
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"Wrong opinion detected. No count: `{no_count}/5`.\nI will ask again. Pick better this time."
+                    f"No count: `{no_count}/5`.\nI ask again. Choose correctly this time before I become a villain."
                 )
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "Finally. Sit down before the chair union complains."
+                "Finally. Sit down before the chair resigns."
             )
 
             menu_view = DateButtonView(
                 allowed,
                 [
                     ("Protein", "protein", discord.ButtonStyle.success),
-                    ("Fat", "fat", discord.ButtonStyle.danger),
+                    ("Fat", "fat", discord.ButtonStyle.danger)
                 ],
+                mode="both",
                 timeout=300
             )
 
@@ -291,35 +316,39 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "Here is tonight's legendary menu.\n\nYou have two options: **Protein** or **Fat**.\nChoose wisely. The kitchen is being supervised by a bald gym deity.",
-                image=MENU_IMG,
-                view=menu_view
+                "Here is tonight's menu.\nOptions: **Protein** or **Fat**.\nChoose wisely. The bald protein guardian is watching.",
+                image=MENU_IMG
             )
 
+            btn = await self.button_msg(restaurant, "Pick your food:", menu_view)
             await menu_view.done.wait()
+
+            try:
+                await btn.delete()
+            except:
+                pass
 
             if "fat" in menu_view.answers.values():
                 await self.speak(
                     restaurant,
                     "Dwayne Rock Jhonson",
                     ROCK_PFP,
-                    "NO. ABSOLUTELY NOT. FAT HAS BEEN CANCELLED.\nYou are getting protein. Be grateful.",
+                    "NO. FAT HAS BEEN CANCELLED.\nYou are getting protein. Be grateful."
                 )
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "Order locked: **Protein**.\n\nYour food will arrive in **1 minute**. You may talk now. I will return when the protein has finished emotionally preparing."
+                "Order locked: **Protein**.\n\nFood arrives in **1 minute**. You may talk now. I will return when the protein is emotionally ready."
             )
 
             await asyncio.sleep(60)
 
             eat_view = DateButtonView(
                 allowed,
-                [
-                    ("I ate", "ate", discord.ButtonStyle.success),
-                ],
+                [("I ate", "ate", discord.ButtonStyle.success)],
+                mode="both",
                 timeout=600
             )
 
@@ -327,18 +356,22 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "Your protein meal has arrived. It has more gains than your entire bloodline.\n\nWhen both of you are done eating click **I ate**.",
-                image=PROTEIN_IMG,
-                view=eat_view
+                "Your protein meal has arrived. It has more gains than your bloodline.\n\nClick **I ate** when both of you are done.",
+                image=PROTEIN_IMG
             )
 
+            btn = await self.button_msg(restaurant, "Eating confirmation:", eat_view)
             await eat_view.done.wait()
+
+            try:
+                await btn.delete()
+            except:
+                pass
 
             ice_view = DateButtonView(
                 allowed,
-                [
-                    ("I finished ice cream", "done", discord.ButtonStyle.success),
-                ],
+                [("I finished ice cream", "done", discord.ButtonStyle.success)],
+                mode="both",
                 timeout=600
             )
 
@@ -346,19 +379,25 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "Dessert time. Ice cream has arrived because even protein warriors need joy.\n\nClick **I finished ice cream** when both of you are done.",
-                image=ICECREAM_IMG,
-                view=ice_view
+                "Dessert time. Ice cream has arrived because even protein soldiers need happiness.\n\nClick when done.",
+                image=ICECREAM_IMG
             )
 
+            btn = await self.button_msg(restaurant, "Dessert confirmation:", ice_view)
             await ice_view.done.wait()
+
+            try:
+                await btn.delete()
+            except:
+                pass
 
             pay_view = DateButtonView(
                 allowed,
                 [
                     ("She pays", "she", discord.ButtonStyle.danger),
-                    ("I pay", "me", discord.ButtonStyle.success),
+                    ("I pay", "me", discord.ButtonStyle.success)
                 ],
+                mode="first",
                 timeout=300
             )
 
@@ -366,14 +405,19 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "The bill has arrived.\n\nWho is paying? Choose carefully. Society is watching.",
-                image=BILL_IMG,
-                view=pay_view
+                "The bill has arrived.\n\nWho is paying? First choice decides. Choose carefully.",
+                image=BILL_IMG
             )
 
+            btn = await self.button_msg(restaurant, "Payment choice:", pay_view)
             await pay_view.done.wait()
 
-            if pay_view.answers.get(partner.id) == "she" or "she" in pay_view.answers.values():
+            try:
+                await btn.delete()
+            except:
+                pass
+
+            if list(pay_view.answers.values())[0] == "she":
                 await self.speak(
                     restaurant,
                     "Dwayne Rock Jhonson",
@@ -385,7 +429,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                f"{requester.mention}, your turn. Pay the bill like the financially questionable gentleman you are."
+                f"{requester.mention}, your turn. Pay like a financially suspicious gentleman."
             )
 
             await asyncio.sleep(2)
@@ -413,7 +457,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "Accepted. Annoyingly handsome payment method approved. You may leave.",
+                "Accepted. Face card approved. You may leave before I change my mind.",
                 image=FACE_CARD_IMG
             )
 
@@ -429,14 +473,14 @@ class DateCog(commands.Cog):
                 restaurant,
                 "French guy",
                 FRENCH_GUY_PFP,
-                f"The restaurant arc is complete. Kindly move to {outside.mention} before the waitress changes her mind."
+                f"Restaurant arc complete. Move to {outside.mention}."
             )
 
             await self.speak(
                 outside,
                 "French guy",
                 FRENCH_GUY_PFP,
-                "You are now outside. The night is cold. The vibes are expensive.",
+                "You are outside. The night is cold. The vibes are expensive.",
                 image=OUTSIDE_IMG
             )
 
@@ -444,15 +488,16 @@ class DateCog(commands.Cog):
                 outside,
                 requester,
                 partner,
-                "Both of you type anything here and the taxi driver will arrive."
+                "Both of you type anything and the taxi driver will arrive."
             )
 
             taxi_view = DateButtonView(
                 allowed,
                 [
                     ("Aifil Tawar", "tower", discord.ButtonStyle.success),
-                    ("House", "house", discord.ButtonStyle.danger),
+                    ("House", "house", discord.ButtonStyle.danger)
                 ],
+                mode="first",
                 timeout=300
             )
 
@@ -460,13 +505,17 @@ class DateCog(commands.Cog):
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                "Where are we going?\n\nFirst valid choice decides the destination. Pick wisely because I drive like a side quest NPC.",
-                image=TAXI_IMG,
-                view=taxi_view
+                "Where are we going?\nFirst valid choice decides.",
+                image=TAXI_IMG
             )
 
-            while not taxi_view.answers:
-                await asyncio.sleep(0.5)
+            btn = await self.button_msg(outside, "Pick destination:", taxi_view)
+            await taxi_view.done.wait()
+
+            try:
+                await btn.delete()
+            except:
+                pass
 
             first_choice = list(taxi_view.answers.values())[0]
 
@@ -482,7 +531,7 @@ class DateCog(commands.Cog):
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                "Destination locked: **Aifal Tawar**.\nDrive time: **30 seconds**.\nTalk in the taxi while I violate every traffic law in France."
+                "Destination locked: **Aifal Tawar**.\nDrive time: **30 seconds**. Talk while I commit French traffic crimes."
             )
 
             await asyncio.sleep(30)
@@ -499,14 +548,14 @@ class DateCog(commands.Cog):
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                f"We are here. Get out. Kindly move to {tower.mention}. I do not accept emotional baggage as payment."
+                f"We are here. Get out. Move to {tower.mention}."
             )
 
             await self.speak(
                 tower,
                 "le taxi driver",
                 TAXI_PFP,
-                "Welcome to **Aifal Tawar**.\nYou have **5 minutes** to talk, be cute, stare at pixels and pretend this is Paris.",
+                "Welcome to **Aifal Tawar**.\nYou have **5 minutes** to talk and do whatever romantic nonsense you want.",
                 image=EIFEL_IMG
             )
 
@@ -516,8 +565,9 @@ class DateCog(commands.Cog):
                 allowed,
                 [
                     ("Kiss and end the date", "kiss", discord.ButtonStyle.success),
-                    ("End with no kiss", "no_kiss", discord.ButtonStyle.danger),
+                    ("End with no kiss", "no_kiss", discord.ButtonStyle.danger)
                 ],
+                mode="both",
                 timeout=300
             )
 
@@ -525,11 +575,16 @@ class DateCog(commands.Cog):
                 tower,
                 "French guy",
                 FRENCH_GUY_PFP,
-                "The date is ending.\n\nBoth of you must choose the ending.\nIf anyone chooses **no kiss**, the bald romance guardian will interfere.",
-                view=end_view
+                "The date is ending.\nBoth must choose the ending.\nIf anyone picks no kiss, the protein guardian interferes."
             )
 
+            btn = await self.button_msg(tower, "Choose ending:", end_view)
             await end_view.done.wait()
+
+            try:
+                await btn.delete()
+            except:
+                pass
 
             if "no_kiss" in end_view.answers.values():
                 await self.speak(
@@ -546,19 +601,9 @@ class DateCog(commands.Cog):
                 f"{requester.mention} and {partner.mention} ended the date with a kiss.\n\nCinema. Protein. Financial recovery. 10/10."
             )
 
-            await asyncio.sleep(10)
-
-            await self.speak(
-                tower,
-                "le taxi driver",
-                TAXI_PFP,
-                "Date complete. I am leaving. Please do not summon me again unless there is petrol money."
-            )
-
         finally:
-            self.active_users.discard(ctx.author.id)
-            if partner:
-                self.active_users.discard(partner.id)
+            self.active_users.discard(requester.id)
+            self.active_users.discard(partner.id)
 
 
 async def setup(bot):
