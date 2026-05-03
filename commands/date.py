@@ -88,7 +88,7 @@ class DateCog(commands.Cog):
 
     async def type_wait(self, channel):
         async with channel.typing():
-            await asyncio.sleep(random.randint(1, 2))
+            await asyncio.sleep(random.uniform(0.5, 1.0))
 
     async def send_webhook(self, channel, name, avatar, content):
         await self.type_wait(channel)
@@ -115,13 +115,13 @@ class DateCog(commands.Cog):
     async def speak(self, channel, name, avatar, content=None, image=None):
         last_msg = None
 
+        if image:
+            last_msg = await self.send_webhook(channel, name, avatar, image)
+
         if content:
             parts = [p.strip() for p in content.split("\n") if p.strip()]
             for part in parts:
                 last_msg = await self.send_webhook(channel, name, avatar, part)
-
-        if image:
-            last_msg = await self.send_webhook(channel, name, avatar, image)
 
         return last_msg
 
@@ -260,7 +260,6 @@ class DateCog(commands.Cog):
 
             if choice == "fat":
                 answers[msg.author.id] = "protein"
-
                 await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "FAT??!!")
                 await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "HELL NAH BROTHER.")
                 await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "WE NEED PROTIEN FOR THE GAINS.")
@@ -297,8 +296,7 @@ class DateCog(commands.Cog):
                 and "face card" in msg.content.lower()
             )
 
-        msg = await self.bot.wait_for("message", check=check)
-        await self.persona_reply(msg, "okey")
+        await self.bot.wait_for("message", check=check)
 
     @commands.command(name="date")
     async def date(self, ctx, partner: discord.Member = None):
@@ -440,7 +438,7 @@ class DateCog(commands.Cog):
                 WAITRESS_PFP,
                 mode="both",
                 timeout=600,
-                ack=True
+                ack=False
             )
 
             if len(eat_answers) < 2:
@@ -465,7 +463,7 @@ class DateCog(commands.Cog):
                 WAITRESS_PFP,
                 mode="both",
                 timeout=600,
-                ack=True
+                ack=False
             )
 
             if len(ice_answers) < 2:
@@ -503,7 +501,7 @@ class DateCog(commands.Cog):
 
             await self.speak(restaurant, "le weightress", WAITRESS_PFP, f"{requester.mention} card pls.\nbe brave. be silly. be financially fictional.")
 
-            card_msg = await self.wait_for_phrase(restaurant, requester, ["card"], timeout=300, ack=True)
+            card_msg = await self.wait_for_phrase(restaurant, requester, ["card"], timeout=300, ack=False)
 
             if card_msg is None:
                 return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "no card. no money. no oxygen.")
