@@ -292,7 +292,7 @@ class DateCog(commands.Cog):
             return (
                 msg.channel.id == channel.id
                 and msg.author.id == user.id
-                and not msg.author.bot
+                and not msg.author.bot 
                 and "face card" in msg.content.lower()
             )
 
@@ -422,7 +422,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "FOOD ARRIVD.\nthis plate has protien and uhm protien .\nType `done` when u finish eating",
+                "FOOD ARRIVD.\nthis plate has protien and uhm protien . \nU guys are a cute couple.. i did see you laff at that poor kid tho.. cruel.. \nType `done` when u finish eating",
                 image=PROTEIN_IMG
             )
 
