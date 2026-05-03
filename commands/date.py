@@ -24,35 +24,40 @@ EIFEL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/15004857
 
 
 class DateButtonView(discord.ui.View):
-    def __init__(self, cog, channel, allowed_ids, options, timeout=120):
+    def __init__(self, allowed_ids, timeout=120):
         super().__init__(timeout=timeout)
-        self.cog = cog
-        self.channel = channel
         self.allowed_ids = set(allowed_ids)
         self.answers = {}
         self.done = asyncio.Event()
         self.message = None
 
-        for label, value, style in options:
-            button = discord.ui.Button(label=label, style=style)
-            button.callback = self.make_callback(value)
-            self.add_item(button)
+        accept = discord.ui.Button(label="Accept date", style=discord.ButtonStyle.success)
+        reject = discord.ui.Button(label="Reject date", style=discord.ButtonStyle.danger)
 
-    def make_callback(self, value):
-        async def callback(interaction: discord.Interaction):
-            if interaction.user.id not in self.allowed_ids:
-                await interaction.response.defer()
-                return
+        accept.callback = self.accept_callback
+        reject.callback = self.reject_callback
 
-            if interaction.user.id in self.answers:
-                await interaction.response.defer()
-                return
+        self.add_item(accept)
+        self.add_item(reject)
 
+    async def accept_callback(self, interaction: discord.Interaction):
+        await self.handle_click(interaction, "accept")
+
+    async def reject_callback(self, interaction: discord.Interaction):
+        await self.handle_click(interaction, "reject")
+
+    async def handle_click(self, interaction, value):
+        if interaction.user.id not in self.allowed_ids:
             await interaction.response.defer()
-            self.answers[interaction.user.id] = value
-            self.done.set()
+            return
 
-        return callback
+        if interaction.user.id in self.answers:
+            await interaction.response.defer()
+            return
+
+        await interaction.response.defer()
+        self.answers[interaction.user.id] = value
+        self.done.set()
 
     async def disable_buttons(self):
         for item in self.children:
@@ -121,7 +126,6 @@ class DateCog(commands.Cog):
             return None
 
         await self.type_wait(channel, name)
-
         webhook = await self.get_webhook(channel, name)
 
         try:
@@ -132,7 +136,6 @@ class DateCog(commands.Cog):
                 wait=True,
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
-
         except discord.NotFound:
             webhook = await self.fresh_webhook(channel, name)
             return await webhook.send(
@@ -142,7 +145,6 @@ class DateCog(commands.Cog):
                 wait=True,
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
-
         except discord.HTTPException:
             webhook = await self.fresh_webhook(channel, name)
             return await webhook.send(
@@ -153,17 +155,26 @@ class DateCog(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
 
-    async def reply_okey(self, msg, speaker="le weightress"):
-        try:
-            await msg.reply(f"**{speaker}:** okey", mention_author=False)
-        except Exception:
-            await msg.channel.send(f"**{speaker}:** okey")
+    async def persona_reply(self, msg, name, content="okey"):
+        guild = msg.guild
+        me = guild.me
+        old_nick = me.nick
 
-    async def rock_arrives(self, channel):
-        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "FAT??!!")
-        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "HELL NAH BROTHER.")
-        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "WE NEED PROTIEN FOR THE GAINS.")
-        await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "chef bring the muscle plate.")
+        async with self.nick_lock:
+            try:
+                await me.edit(nick=name[:32])
+            except Exception:
+                pass
+
+            try:
+                await msg.reply(content, mention_author=False)
+            except Exception:
+                await msg.channel.send(content)
+
+            try:
+                await me.edit(nick=old_nick)
+            except Exception:
+                pass
 
     async def button_msg(self, channel, text, view):
         msg = await channel.send(content=text, view=view)
@@ -219,20 +230,13 @@ class DateCog(commands.Cog):
         missing_pinged = set()
 
         def check(msg):
-            if msg.channel.id != channel.id:
-                return False
-
-            if msg.author.bot:
-                return False
-
-            if msg.author.id not in allowed_ids:
-                return False
-
-            if msg.author.id in answers:
-                return False
-
-            text = msg.content.lower().strip()
-            return text in choices
+            return (
+                msg.channel.id == channel.id
+                and not msg.author.bot
+                and msg.author.id in allowed_ids
+                and msg.author.id not in answers
+                and msg.content.lower().strip() in choices
+            )
 
         while True:
             try:
@@ -246,7 +250,7 @@ class DateCog(commands.Cog):
             value, label = choices[msg.content.lower().strip()]
             answers[msg.author.id] = value
 
-            await self.reply_okey(msg, ask_name)
+            await self.persona_reply(msg, ask_name, "okey")
 
             if mode == "first":
                 return answers
@@ -266,6 +270,67 @@ class DateCog(commands.Cog):
                         f"what abt {user.mention}"
                     )
 
+    async def wait_menu_choices(self, channel, users, timeout=300):
+        allowed_ids = {u.id for u in users}
+        answers = {}
+        missing_pinged = set()
+
+        def check(msg):
+            return (
+                msg.channel.id == channel.id
+                and not msg.author.bot
+                and msg.author.id in allowed_ids
+                and msg.author.id not in answers
+                and msg.content.lower().strip() in ["fat", "protien", "protein"]
+            )
+
+        while len(answers) < len(allowed_ids):
+            try:
+                msg = await asyncio.wait_for(
+                    self.bot.wait_for("message", check=check),
+                    timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                return answers
+
+            choice = msg.content.lower().strip()
+
+            if choice == "fat":
+                await self.persona_reply(msg, "le weightress", "okey")
+
+                await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "FAT??!!")
+                await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "HELL NAH BROTHER.")
+                await self.speak(channel, "Dwayne Rock Jhonson", ROCK_PFP, "WE NEED PROTIEN FOR THE GAINS.")
+                await self.speak(
+                    channel,
+                    "Dwayne Rock Jhonson",
+                    ROCK_PFP,
+                    f"{msg.author.mention} ur order is now **PROTIEN**."
+                )
+
+                answers[msg.author.id] = "protein"
+
+            else:
+                await self.persona_reply(msg, "le weightress", "okey")
+                answers[msg.author.id] = "protein"
+
+            await asyncio.sleep(1)
+
+            if len(answers) >= len(allowed_ids):
+                return answers
+
+            for user in users:
+                if user.id not in answers and user.id not in missing_pinged:
+                    missing_pinged.add(user.id)
+                    await self.speak(
+                        channel,
+                        "le weightress",
+                        WAITRESS_PFP,
+                        f"what abt {user.mention}"
+                    )
+
+        return answers
+
     async def wait_special_payment_phrase(self, channel, user):
         await self.speak(
             channel,
@@ -282,7 +347,7 @@ class DateCog(commands.Cog):
             )
 
         msg = await self.bot.wait_for("message", check=check)
-        await self.reply_okey(msg, "le weightress")
+        await self.persona_reply(msg, "le weightress", "okey")
 
     @commands.command(name="date")
     async def date(self, ctx, partner: discord.Member = None):
@@ -305,16 +370,7 @@ class DateCog(commands.Cog):
         self.active_users.add(partner.id)
 
         try:
-            accept_view = DateButtonView(
-                self,
-                ctx.channel,
-                {partner.id},
-                [
-                    ("Accept date", "accept", discord.ButtonStyle.success),
-                    ("Reject date", "reject", discord.ButtonStyle.danger)
-                ],
-                timeout=120
-            )
+            accept_view = DateButtonView({partner.id}, timeout=120)
 
             await self.speak(
                 ctx.channel,
@@ -328,30 +384,14 @@ class DateCog(commands.Cog):
             try:
                 await asyncio.wait_for(accept_view.done.wait(), timeout=120)
             except asyncio.TimeoutError:
-                return await self.speak(
-                    ctx.channel,
-                    "French guy",
-                    FRENCH_GUY_PFP,
-                    "no answer. date evaporated."
-                )
+                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "no answer. date evaporated.")
 
             await accept_view.disable_buttons()
 
             if accept_view.answers.get(partner.id) != "accept":
-                return await self.speak(
-                    ctx.channel,
-                    "French guy",
-                    FRENCH_GUY_PFP,
-                    "rejected. bro became soup."
-                )
+                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "rejected. bro became soup.")
 
-            restaurant = await self.make_private_channel(
-                ctx.guild,
-                "le-restront",
-                requester,
-                partner,
-                ctx.channel.category
-            )
+            restaurant = await self.make_private_channel(ctx.guild, "le-restront", requester, partner, ctx.channel.category)
 
             await self.speak(
                 ctx.channel,
@@ -377,7 +417,7 @@ class DateCog(commands.Cog):
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nType `yes` \nno",
+                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nType `yes` or `no`\nno counter: `{no_count}/5`",
                     image=TABLE_IMG
                 )
 
@@ -397,12 +437,7 @@ class DateCog(commands.Cog):
                 )
 
                 if len(seat_answers) < 2:
-                    return await self.speak(
-                        restaurant,
-                        "le weightress",
-                        WAITRESS_PFP,
-                        "too slow. chair got bored. date cancelled."
-                    )
+                    return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "too slow. chair got bored. date cancelled.")
 
                 if all(v == "yes" for v in seat_answers.values()):
                     break
@@ -410,13 +445,7 @@ class DateCog(commands.Cog):
                 no_count += list(seat_answers.values()).count("no")
 
                 if no_count >= 5:
-                    await self.speak(
-                        restaurant,
-                        "le weightress",
-                        WAITRESS_PFP,
-                        "5 NO'S???\noutside. no food. chair wins."
-                    )
-                    return
+                    return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "5 NO'S???\noutside. no food. chair wins.")
 
                 await self.speak(
                     restaurant,
@@ -440,30 +469,14 @@ class DateCog(commands.Cog):
                 image=MENU_IMG
             )
 
-            menu_answers = await self.wait_text_choices(
+            menu_answers = await self.wait_menu_choices(
                 restaurant,
                 allowed_users,
-                {
-                    "protien": ("protein", "Protien"),
-                    "protein": ("protein", "Protien"),
-                    "fat": ("fat", "FAT")
-                },
-                "le weightress",
-                WAITRESS_PFP,
-                mode="both",
                 timeout=300
             )
 
             if len(menu_answers) < 2:
-                return await self.speak(
-                    restaurant,
-                    "le weightress",
-                    WAITRESS_PFP,
-                    "menu timeout. chef left. tragic."
-                )
-
-            if "fat" in menu_answers.values():
-                await self.rock_arrives(restaurant)
+                return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "menu timeout. chef left. tragic.")
 
             await self.speak(
                 restaurant,
@@ -497,12 +510,7 @@ class DateCog(commands.Cog):
             )
 
             if len(eat_answers) < 2:
-                return await self.speak(
-                    restaurant,
-                    "le weightress",
-                    WAITRESS_PFP,
-                    "food got cold. date died of slow typing."
-                )
+                return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "food got cold. date died of slow typing.")
 
             await self.speak(
                 restaurant,
@@ -526,12 +534,7 @@ class DateCog(commands.Cog):
             )
 
             if len(ice_answers) < 2:
-                return await self.speak(
-                    restaurant,
-                    "le weightress",
-                    WAITRESS_PFP,
-                    "ice creem melted. so did the relationship."
-                )
+                return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "ice creem melted. so did the relationship.")
 
             await self.speak(
                 restaurant,
@@ -557,12 +560,7 @@ class DateCog(commands.Cog):
             )
 
             if not pay_answers:
-                return await self.speak(
-                    restaurant,
-                    "le weightress",
-                    WAITRESS_PFP,
-                    "nobody paid. police arc unlocked."
-                )
+                return await self.speak(restaurant, "le weightress", WAITRESS_PFP, "nobody paid. police arc unlocked.")
 
             if list(pay_answers.values())[0] == "she":
                 await self.speak(
@@ -608,13 +606,7 @@ class DateCog(commands.Cog):
                 image=FACE_CARD_IMG
             )
 
-            outside = await self.make_private_channel(
-                ctx.guild,
-                "le-outside",
-                requester,
-                partner,
-                ctx.channel.category
-            )
+            outside = await self.make_private_channel(ctx.guild, "le-outside", requester, partner, ctx.channel.category)
 
             await self.speak(
                 restaurant,
@@ -658,12 +650,7 @@ class DateCog(commands.Cog):
             )
 
             if not taxi_answers:
-                return await self.speak(
-                    outside,
-                    "le taxi driver",
-                    TAXI_PFP,
-                    "no destination. taxi exploded emotionally."
-                )
+                return await self.speak(outside, "le taxi driver", TAXI_PFP, "no destination. taxi exploded emotionally.")
 
             if list(taxi_answers.values())[0] == "house":
                 await self.speak(
@@ -682,13 +669,7 @@ class DateCog(commands.Cog):
 
             await asyncio.sleep(30)
 
-            tower = await self.make_private_channel(
-                ctx.guild,
-                "aifal-tower",
-                requester,
-                partner,
-                ctx.channel.category
-            )
+            tower = await self.make_private_channel(ctx.guild, "aifal-tower", requester, partner, ctx.channel.category)
 
             await self.speak(
                 outside,
@@ -729,12 +710,7 @@ class DateCog(commands.Cog):
             )
 
             if len(end_answers) < 2:
-                return await self.speak(
-                    tower,
-                    "French guy",
-                    FRENCH_GUY_PFP,
-                    "ending timeout. romance buffer crashed."
-                )
+                return await self.speak(tower, "French guy", FRENCH_GUY_PFP, "ending timeout. romance buffer crashed.")
 
             if "no_kiss" in end_answers.values():
                 await self.speak(
