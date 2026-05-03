@@ -285,7 +285,7 @@ class DateCog(commands.Cog):
             channel,
             "le weightress",
             WAITRESS_PFP,
-            f"{user.mention} uhhh...\nthe machine said **nuh uh**.\ntry the secret rich people method or we washing plates 😭"
+            f"{user.mention} uhhh...\nthe machine said **nuh uh**.\nr we ready to wash plates?"
         )
 
         def check(msg):
@@ -361,7 +361,7 @@ class DateCog(commands.Cog):
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\nType `yes` or `no`\nno counter: `{no_count}/5`",
+                    f"i have picked the best seat for you guys i totally wont be watching you from inside the walls...\nseat ok or u wanna inspect furniture like ikea employee?\nType `yes` or `no`\nno counter: `{no_count}/5`",
                     image=TABLE_IMG
                 )
 
@@ -400,7 +400,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "menu time.\nwe have **protien** and **FAT**.\nchef made 2 items then got tired.\nType `protien` or `fat`",
+                "heres the menu we have a loto options you can see .\nwe have **protien** and **FAT**.\nchef made 2 items then got tired.\nType `protien` or `fat`",
                 image=MENU_IMG
             )
 
@@ -422,7 +422,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "FOOD ARRIVD.\nthis plate has gains and confusion.\nType `done` when u finish eating ur pixels.",
+                "FOOD ARRIVD.\nthis plate has protien and uhm protien .\nType `done` when u finish eating",
                 image=PROTEIN_IMG
             )
 
@@ -448,7 +448,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "dessert jumpscare.\nice creem arrived with eyeballs. very fancy. very normal.\nType `done` when finished.",
+                "time for desert.\nice creem arrived with eyeballs. very fancy.\nType `done` when finished.",
                 image=ICECREAM_IMG
             )
 
@@ -499,7 +499,7 @@ class DateCog(commands.Cog):
             if list(pay_answers.values())[0] == "she":
                 await self.speak(restaurant, "Dwayne Rock Jhonson", ROCK_PFP, f"*BONK* {partner.mention}\nprincesses do not pay.\nwallet goes back in pocket.")
 
-            await self.speak(restaurant, "le weightress", WAITRESS_PFP, f"{requester.mention} card pls.\nbe brave. be silly. be financially fictional.")
+            await self.speak(restaurant, "le weightress", WAITRESS_PFP, f"{requester.mention} card pls.\nbe brave. we gonna get through ts")
 
             card_msg = await self.wait_for_phrase(restaurant, requester, ["card"], timeout=300, ack=False)
 
@@ -512,23 +512,23 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "DECLINED???\nmy brother in baguette the machine just giggled.",
+                "DECLINED???\nmy brother in baguette... the machine just giggled.",
                 image=DECLINED_IMG
             )
 
             await self.wait_special_payment_phrase(restaurant, requester)
 
-            await self.speak(restaurant, "le weightress", WAITRESS_PFP, "wait...\nscanning fancy payment aura...\ncomputer is blushing hold on.")
+            await self.speak(restaurant, "le weightress", WAITRESS_PFP, "wait...\nscanning face card..\ncomputer is blushing hold on.")
 
             await asyncio.sleep(3)
 
-            await self.speak(restaurant, "le weightress", WAITRESS_PFP, "APPROVED.\nface economy strong. bank account irrelevant.", image=FACE_CARD_IMG)
+            await self.speak(restaurant, "le weightress", WAITRESS_PFP, "APPROVED.\nseggsy bf you got there mam", image=FACE_CARD_IMG)
 
             outside = await self.make_private_channel(ctx.guild, "le-outside", requester, partner, ctx.channel.category)
 
-            await self.speak(restaurant, "French guy", FRENCH_GUY_PFP, f"restront arc complete.\ngo outside before weightress charges oxygen: {outside.mention}")
+            await self.speak(restaurant, "French guy", FRENCH_GUY_PFP, f"hi.\ngo outside before weightress charges oxygen: {outside.mention}")
 
-            await self.speak(outside, "French guy", FRENCH_GUY_PFP, "outside moment.\nair has loaded.", image=OUTSIDE_IMG)
+            await self.speak(outside, "French guy", FRENCH_GUY_PFP, "a taxi will be here soon.\ni touch kids ngl", image=OUTSIDE_IMG)
 
             await self.wait_until_both_talk_silent(outside, requester, partner)
 
@@ -536,7 +536,7 @@ class DateCog(commands.Cog):
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                "get in loser.\nwhere we going.\nType `aifil tawar` or `house`.\nfirst answer decides because democracy got tired.",
+                "hi im taxi driver.\nwhere we going.\nType `aifil tawar` or `house`.\nfirst answer decides because democracy got tired.",
                 image=TAXI_IMG
             )
 
@@ -563,7 +563,7 @@ class DateCog(commands.Cog):
             if list(taxi_answers.values())[0] == "house":
                 await self.speak(outside, "Dwayne Rock Jhonson", ROCK_PFP, "HOUSE?\nHELL NAH BROTHER.\nthis is a date not bedtime.\ntaxi go to aifil tawar.")
 
-            await self.speak(outside, "le taxi driver", TAXI_PFP, "destination: **aifil tawar**.\ndrive time: **30 seconds**.\nseatbelt optional. vibes required.")
+            await self.speak(outside, "le taxi driver", TAXI_PFP, "destination: **aifil tawar**.\ndrive time: **30 seconds**.\npls dong fuhh in my taxi")
 
             await asyncio.sleep(30)
 
@@ -571,7 +571,7 @@ class DateCog(commands.Cog):
 
             await self.speak(outside, "le taxi driver", TAXI_PFP, f"we here.\nget out my car and go be romantic over there: {tower.mention}")
 
-            await self.speak(tower, "le taxi driver", TAXI_PFP, "welcome to **aifal tawar**.\nu got **5 minutes**.\nbe cute. be cringe. be historical.", image=EIFEL_IMG)
+            await self.speak(tower, "le taxi driver", TAXI_PFP, "welcome to **aifal tawar**.\nu got **5 minutes**.\nesplore the area and try not to die", image=EIFEL_IMG)
 
             await asyncio.sleep(300)
 
@@ -596,9 +596,9 @@ class DateCog(commands.Cog):
                 return await self.speak(tower, "French guy", FRENCH_GUY_PFP, "ending timeout. romance buffer crashed.")
 
             if "no_kiss" in end_answers.values():
-                await self.speak(tower, "Dwayne Rock Jhonson", ROCK_PFP, "NO KISS?\nHELL NAH BROTHER.\nromance ending has been force updated.")
+                await self.speak(tower, "Dwayne Rock Jhonson", ROCK_PFP, "NO KISS?\nTHE FBI IS DISAPPOINTED .\nromance ending has been force updated.")
 
-            await self.speak(tower, "French guy", FRENCH_GUY_PFP, f"{requester.mention} and {partner.mention} ended le date with kiss.\ncinema. protien. fancy payment aura. peak fiction.")
+            await self.speak(tower, "French guy", FRENCH_GUY_PFP, f"{requester.mention} and {partner.mention} ended le date with kiss.\nABSOLOUTE CINEMA. protien. fancy payment aura. peak fiction.")
 
         finally:
             self.active_users.discard(requester.id)
