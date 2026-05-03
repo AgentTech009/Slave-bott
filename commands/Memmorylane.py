@@ -3,7 +3,9 @@ from discord.ext import commands
 import asyncio
 import random
 
-PFP_URL = "https://cdn.discordapp.com/attachments/1500472877210927197/1500564011161223229/images-12.jpg?ex=69f8e4a3&is=69f79323&hm=d603cc0c2c1f531a0f6b010f21cf42850dd53e661bb1766996c4d4b559b3669c&"
+BOY_GIRL_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500564011161223229/images-12.jpg?ex=69f8e4a3&is=69f79323&hm=d603cc0c2c1f531a0f6b010f21cf42850dd53e661bb1766996c4d4b559b3669c&"
+
+NARRATOR_PFP = "https://cdn-icons-png.flaticon.com/512/833/833472.png"
 
 
 class MemoryLane(commands.Cog):
@@ -16,12 +18,15 @@ class MemoryLane(commands.Cog):
         except:
             pass
 
-    def typing_time(self, msg):
-        base = len(msg) * 0.12
-        nervous_pause = random.uniform(1.5, 3.5)
-        return max(2.5, min(base + nervous_pause, 10))
+    def typing_time(self, msg, narrator=False):
+        if narrator:
+            return random.uniform(0.5, 1.5)
 
-    async def send_as(self, channel, webhook, guild, name, text):
+        base = len(msg) * 0.10
+        nervous = random.uniform(1.5, 3.0)
+        return max(2.0, min(base + nervous, 8.5))
+
+    async def send_as(self, channel, webhook, guild, name, text, pfp, narrator=False):
         parts = text.split("\n")
 
         for part in parts:
@@ -32,16 +37,19 @@ class MemoryLane(commands.Cog):
             await self.set_bot_nick(guild, name)
 
             async with channel.typing():
-                await asyncio.sleep(self.typing_time(part))
+                await asyncio.sleep(self.typing_time(part, narrator=narrator))
 
             await webhook.send(
                 content=part,
                 username=name,
-                avatar_url=PFP_URL,
+                avatar_url=pfp,
                 allowed_mentions=discord.AllowedMentions.none()
             )
 
-            await asyncio.sleep(random.uniform(0.8, 1.8))
+            if narrator:
+                await asyncio.sleep(random.uniform(0.4, 0.8))
+            else:
+                await asyncio.sleep(random.uniform(0.8, 1.5))
 
     @commands.command(name="memmorylane")
     @commands.has_permissions(administrator=True)
@@ -79,22 +87,23 @@ class MemoryLane(commands.Cog):
         await asyncio.sleep(5)
 
         script = [
-            ("Narrator", narrator_webhook, "**8:47**"),
-            ("A boy", boy_webhook, "Mmh\nPinneh ondello"),
-            ("A girl", girl_webhook, "Aahmm"),
-            ("A boy", boy_webhook, "Neeyoru reply aloicho... 👀"),
-            ("A girl", girl_webhook, "Aahhh aloichuuu..."),
-            ("A boy", boy_webhook, "Enthaaaa👀"),
+            ("Narrator", narrator_webhook, "**8:47**", NARRATOR_PFP, True),
 
-            ("Narrator", narrator_webhook, "**Girl eating porotta while boy is dying out there**"),
-            ("Narrator", narrator_webhook, "**15 minutes later**"),
+            ("A boy", boy_webhook, "Mmh\nPinneh ondello", BOY_GIRL_PFP, False),
+            ("A girl", girl_webhook, "Aahmm", BOY_GIRL_PFP, False),
+            ("A boy", boy_webhook, "Neeyoru reply aloicho... 👀", BOY_GIRL_PFP, False),
+            ("A girl", girl_webhook, "Aahhh aloichuuu...", BOY_GIRL_PFP, False),
+            ("A boy", boy_webhook, "Enthaaaa👀", BOY_GIRL_PFP, False),
 
-            ("A girl", girl_webhook, "Aahhh athhhh"),
-            ("A boy", boy_webhook, "Athhh....👀"),
-            ("A girl", girl_webhook, "Enikkmm ninnee ishtavaaa"),
-            ("A boy", boy_webhook, "Ohhh 👀👀\nYay"),
-            ("A girl", girl_webhook, "Mhmmm😂"),
-            ("A boy", boy_webhook, "Pinneh enna kaichooo..."),
+            ("Narrator", narrator_webhook, "**Girl eating porotta while boy is dying out there**", NARRATOR_PFP, True),
+            ("Narrator", narrator_webhook, "**15 minutes later**", NARRATOR_PFP, True),
+
+            ("A girl", girl_webhook, "Aahhh athhhh", BOY_GIRL_PFP, False),
+            ("A boy", boy_webhook, "Athhh....👀", BOY_GIRL_PFP, False),
+            ("A girl", girl_webhook, "Enikkmm ninnee ishtavaaa", BOY_GIRL_PFP, False),
+            ("A boy", boy_webhook, "Ohhh 👀👀\nYay", BOY_GIRL_PFP, False),
+            ("A girl", girl_webhook, "Mhmmm😂", BOY_GIRL_PFP, False),
+            ("A boy", boy_webhook, "Pinneh enna kaichooo...", BOY_GIRL_PFP, False),
 
             (
                 "Narrator",
@@ -105,50 +114,21 @@ class MemoryLane(commands.Cog):
                 "Babyy..\n"
                 "I will always be with you🥹🥹\n"
                 "I WILL ALWAYS LOVE YOU🥹🥹\n"
-                "-your nervous little boy.."
+                "-your nervous little boy..",
+                NARRATOR_PFP,
+                True
             )
         ]
 
-        for name, webhook, message in script:
-            await send_typing_and_message(channel, webhook, guild, name, message)
-            await asyncio.sleep(random.uniform(1, 2))
+        for name, webhook, message, pfp, narrator in script:
+            await self.send_as(channel, webhook, guild, name, message, pfp, narrator)
+            await asyncio.sleep(0.6 if narrator else random.uniform(1.0, 1.8))
 
         for webhook in [boy_webhook, girl_webhook, narrator_webhook]:
             try:
                 await webhook.delete()
             except:
                 pass
-
-
-async def send_typing_and_message(channel, webhook, guild, name, text):
-    parts = text.split("\n")
-
-    for part in parts:
-        part = part.strip()
-        if not part:
-            continue
-
-        try:
-            await guild.me.edit(nick=name)
-        except:
-            pass
-
-        typing_seconds = max(
-            2.5,
-            min(len(part) * 0.14 + random.uniform(2, 4), 12)
-        )
-
-        async with channel.typing():
-            await asyncio.sleep(typing_seconds)
-
-        await webhook.send(
-            content=part,
-            username=name,
-            avatar_url=PFP_URL,
-            allowed_mentions=discord.AllowedMentions.none()
-        )
-
-        await asyncio.sleep(random.uniform(0.8, 1.8))
 
 
 async def setup(bot):
