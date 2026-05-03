@@ -3,8 +3,8 @@ from discord.ext import commands
 from datetime import datetime, timezone
 
 TRACKED_USERS = [
-    123456789012345678,  # your id
-    987654321098765432   # other person's id
+    1496825794364702812,  # your id
+    1496495520120569880   # other person's id
 ]
 
 MAX_LOGS = 10
