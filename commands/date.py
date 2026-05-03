@@ -35,10 +35,10 @@ class DateButtonView(discord.ui.View):
 
         for label, value, style in options:
             button = discord.ui.Button(label=label, style=style)
-            button.callback = self.make_callback(label, value)
+            button.callback = self.make_callback(value)
             self.add_item(button)
 
-    def make_callback(self, label, value):
+    def make_callback(self, value):
         async def callback(interaction: discord.Interaction):
             if interaction.user.id not in self.allowed_ids:
                 await interaction.response.defer()
@@ -72,12 +72,17 @@ class DateCog(commands.Cog):
         self.nick_lock = asyncio.Lock()
 
     async def get_webhook(self, channel, name):
-        webhooks = await channel.webhooks()
+        try:
+            webhooks = await channel.webhooks()
+            for webhook in webhooks:
+                if webhook.name == name:
+                    return webhook
+        except Exception:
+            pass
 
-        for webhook in webhooks:
-            if webhook.name == name:
-                return webhook
+        return await channel.create_webhook(name=name)
 
+    async def fresh_webhook(self, channel, name):
         return await channel.create_webhook(name=name)
 
     async def type_wait(self, channel, speaker_name=None):
@@ -102,22 +107,46 @@ class DateCog(commands.Cog):
                 pass
 
     async def speak(self, channel, name, avatar, content=None, image=None):
-        webhook = await self.get_webhook(channel, name)
+        final_content = ""
 
         if image:
-            await self.type_wait(channel, name)
-            await webhook.send(
-                content=image,
+            final_content += image
+
+        if content:
+            if final_content:
+                final_content += "\n\n"
+            final_content += content
+
+        if not final_content:
+            return None
+
+        await self.type_wait(channel, name)
+
+        webhook = await self.get_webhook(channel, name)
+
+        try:
+            return await webhook.send(
+                content=final_content,
                 username=name,
                 avatar_url=avatar,
                 wait=True,
                 allowed_mentions=discord.AllowedMentions(users=True)
             )
 
-        if content:
-            await self.type_wait(channel, name)
+        except discord.NotFound:
+            webhook = await self.fresh_webhook(channel, name)
             return await webhook.send(
-                content=content,
+                content=final_content,
+                username=name,
+                avatar_url=avatar,
+                wait=True,
+                allowed_mentions=discord.AllowedMentions(users=True)
+            )
+
+        except discord.HTTPException:
+            webhook = await self.fresh_webhook(channel, name)
+            return await webhook.send(
+                content=final_content,
                 username=name,
                 avatar_url=avatar,
                 wait=True,
@@ -185,15 +214,6 @@ class DateCog(commands.Cog):
         mode="both",
         timeout=300
     ):
-        """
-        choices format:
-        {
-            "protien": ("protein", "Protien"),
-            "protein": ("protein", "Protien"),
-            "fat": ("fat", "FAT")
-        }
-        """
-
         allowed_ids = {u.id for u in users}
         answers = {}
         missing_pinged = set()
