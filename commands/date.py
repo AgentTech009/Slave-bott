@@ -24,13 +24,12 @@ EIFEL_IMG = "https://cdn.discordapp.com/attachments/1500472877210927197/15004857
 
 
 class DateButtonView(discord.ui.View):
-    def __init__(self, cog, channel, allowed_ids, options, mode="both", wrong_values=None, timeout=300):
+    def __init__(self, cog, channel, allowed_ids, options, mode="both", timeout=300):
         super().__init__(timeout=timeout)
         self.cog = cog
         self.channel = channel
         self.allowed_ids = set(allowed_ids)
         self.mode = mode
-        self.wrong_values = wrong_values or []
         self.answers = {}
         self.done = asyncio.Event()
         self.message = None
@@ -64,14 +63,6 @@ class DateButtonView(discord.ui.View):
                 WAITRESS_PFP,
                 f"{interaction.user.mention} picked **{label}**"
             )
-
-            if value in self.wrong_values:
-                await self.cog.speak(
-                    self.channel,
-                    "Dwayne Rock Jhonson",
-                    ROCK_PFP,
-                    f"*BONK* {interaction.user.mention}\nwrong choice detected. protein court finds u guilty."
-                )
 
             if self.mode == "first":
                 self.done.set()
@@ -108,7 +99,7 @@ class DateCog(commands.Cog):
 
     async def type_wait(self, channel):
         async with channel.typing():
-            await asyncio.sleep(random.randint(3, 5))
+            await asyncio.sleep(random.randint(1, 2))
 
     async def speak(self, channel, name, avatar, content=None, image=None):
         webhook = await self.get_webhook(channel, name)
@@ -134,7 +125,6 @@ class DateCog(commands.Cog):
             )
 
     async def button_msg(self, channel, text, view):
-        await self.type_wait(channel)
         msg = await channel.send(content=text, view=view)
         view.message = msg
         return msg
@@ -169,19 +159,19 @@ class DateCog(commands.Cog):
             msg = await self.bot.wait_for("message", check=check)
             talked.add(msg.author.id)
 
-    async def wait_exact_face_card(self, channel, user):
+    async def wait_special_payment_phrase(self, channel, user):
         await self.speak(
             channel,
             "le weightress",
             WAITRESS_PFP,
-            f"{user.mention} bro what now.\ncard went **nyoom denied**.\ndo somthin before i start billing ur bloodline."
+            f"{user.mention} uhhh...\nthe machine said **nuh uh**.\ntry the secret rich people method or we washing plates 😭"
         )
 
         def check(msg):
             return (
                 msg.channel.id == channel.id
                 and msg.author.id == user.id
-                and msg.content.strip().lower() == "lemme scan my face card"
+                and "face card" in msg.content.lower()
             )
 
         await self.bot.wait_for("message", check=check)
@@ -216,7 +206,6 @@ class DateCog(commands.Cog):
                     ("Reject date", "reject", discord.ButtonStyle.danger)
                 ],
                 mode="both",
-                wrong_values=["reject"],
                 timeout=120
             )
 
@@ -232,12 +221,12 @@ class DateCog(commands.Cog):
             try:
                 await asyncio.wait_for(accept_view.done.wait(), timeout=120)
             except asyncio.TimeoutError:
-                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "no answer. date evaporated like my will to live.")
+                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "no answer. date evaporated.")
 
             await accept_view.disable_buttons()
 
             if accept_view.answers.get(partner.id) != "accept":
-                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "rejected. bro got grilled in le pan.")
+                return await self.speak(ctx.channel, "French guy", FRENCH_GUY_PFP, "rejected. bro became soup.")
 
             restaurant = await self.make_private_channel(ctx.guild, "le-restront", requester, partner, ctx.channel.category)
 
@@ -252,7 +241,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "French guy",
                 FRENCH_GUY_PFP,
-                "welcum to **le restront**.\ntonight we serve romance, protien, and bank account damage.",
+                "welcum to **le restront**.\ntonight we serve romance, protien, and silly little money problems.",
                 image=RESTAURANT_IMG
             )
 
@@ -270,7 +259,6 @@ class DateCog(commands.Cog):
                         ("no chair ugly", "no", discord.ButtonStyle.danger)
                     ],
                     mode="both",
-                    wrong_values=["no"],
                     timeout=300
                 )
 
@@ -278,7 +266,7 @@ class DateCog(commands.Cog):
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"here ur chair corner deluxe 5 star depression table.\nseat ok or u wanna act premium?\n\nno counter: `{no_count}/5`",
+                    f"here ur chair corner deluxe table.\nseat ok or u wanna inspect furniture like ikea employee?\n\nno counter: `{no_count}/5`",
                     image=TABLE_IMG
                 )
 
@@ -296,7 +284,7 @@ class DateCog(commands.Cog):
                         restaurant,
                         "le weightress",
                         WAITRESS_PFP,
-                        "5 NO'S??? OUT.\nno date. no food. only pavement."
+                        "5 NO'S???\noutside. no food. chair wins."
                     )
                     return
 
@@ -304,17 +292,15 @@ class DateCog(commands.Cog):
                     restaurant,
                     "le weightress",
                     WAITRESS_PFP,
-                    f"ok picky royal family.\nasking again before i replace the chairs with emotional support bricks.\nno counter: `{no_count}/5`"
+                    f"ok picky furniture inspector.\nagain.\nno counter: `{no_count}/5`"
                 )
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "finally. sit. do not breathe expensive air too hard."
+                "finally. sit. chair has accepted u."
             )
-
-            await asyncio.sleep(2)
 
             menu_view = DateButtonView(
                 self,
@@ -325,7 +311,6 @@ class DateCog(commands.Cog):
                     ("FAT", "fat", discord.ButtonStyle.danger)
                 ],
                 mode="both",
-                wrong_values=["fat"],
                 timeout=300
             )
 
@@ -333,7 +318,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "menu time.\nwe have **protien** and **FAT**.\nthat is all because chef failed spelling class.",
+                "menu time.\nwe have **protien** and **FAT**.\nchef made 2 items then got tired.",
                 image=MENU_IMG
             )
 
@@ -346,14 +331,14 @@ class DateCog(commands.Cog):
                     restaurant,
                     "Dwayne Rock Jhonson",
                     ROCK_PFP,
-                    "FAT OPTION HAS BEEN REMOVED BY FEDERAL GYM LAW.\neveryone gets protien. cry into ur fork."
+                    "FAT?\nHELL NAH BROTHER WE NEED PROTIEN FOR THE GAINS.\nchef bring the muscle plate."
                 )
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "order locked: **protien**.\nfood takes **1 minute** because the egg is doing character development.\nchat or stare awkwardly idc."
+                "order locked: **protien**.\nfood takes **1 minute** because the egg is doing character development.\nyap while kitchen does kitchen things."
             )
 
             await asyncio.sleep(60)
@@ -371,7 +356,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "FOOD ARRIVD.\nthis plate has more protien than my ex had excuses.\nclick when u finish chewing ur pixels.",
+                "FOOD ARRIVD.\nthis plate has gains and confusion.\nclick when u finish eating ur pixels.",
                 image=PROTEIN_IMG
             )
 
@@ -392,7 +377,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "dessert jumpscare.\nice creem arrived with eyeballs. very french. very legal.",
+                "dessert jumpscare.\nice creem arrived with eyeballs. very fancy. very normal.",
                 image=ICECREAM_IMG
             )
 
@@ -409,7 +394,6 @@ class DateCog(commands.Cog):
                     ("i pay", "me", discord.ButtonStyle.success)
                 ],
                 mode="first",
-                wrong_values=["she"],
                 timeout=300
             )
 
@@ -417,7 +401,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "BILL TIME.\nthis is not a bill this is a financial boss fight.\nwho pay.",
+                "BILL TIME.\nthis paper has too many zeroes.\nwho pay.",
                 image=BILL_IMG
             )
 
@@ -425,30 +409,38 @@ class DateCog(commands.Cog):
             await pay_view.done.wait()
             await pay_view.disable_buttons()
 
+            if list(pay_view.answers.values())[0] == "she":
+                await self.speak(
+                    restaurant,
+                    "Dwayne Rock Jhonson",
+                    ROCK_PFP,
+                    f"*BONK* {partner.mention}\nprincesses do not pay.\nwallet goes back in pocket."
+                )
+
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                f"{requester.mention} card pls.\nbe brave. be broke. be both."
+                f"{requester.mention} card pls.\nbe brave. be silly. be financially fictional."
             )
 
-            await asyncio.sleep(3)
+            await asyncio.sleep(2)
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "DECLINED???\nmy brother in baguette the machine just laughed.",
+                "DECLINED???\nmy brother in baguette the machine just giggled.",
                 image=DECLINED_IMG
             )
 
-            await self.wait_exact_face_card(restaurant, requester)
+            await self.wait_special_payment_phrase(restaurant, requester)
 
             await self.speak(
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "wait...\nscanning face card rn...\ncomputer is blushing hold on."
+                "wait...\nscanning fancy payment aura...\ncomputer is blushing hold on."
             )
 
             await asyncio.sleep(3)
@@ -457,7 +449,7 @@ class DateCog(commands.Cog):
                 restaurant,
                 "le weightress",
                 WAITRESS_PFP,
-                "APPROVED.\nface card carried. bank account useless but face economy strong.",
+                "APPROVED.\nface economy strong. bank account irrelevant.",
                 image=FACE_CARD_IMG
             )
 
@@ -467,14 +459,14 @@ class DateCog(commands.Cog):
                 restaurant,
                 "French guy",
                 FRENCH_GUY_PFP,
-                f"restront arc complete.\ngo outside before weightress starts charging oxygen: {outside.mention}"
+                f"restront arc complete.\ngo outside before weightress charges oxygen: {outside.mention}"
             )
 
             await self.speak(
                 outside,
                 "French guy",
                 FRENCH_GUY_PFP,
-                "outside moment.\nair is free for now.",
+                "outside moment.\nair has loaded.",
                 image=OUTSIDE_IMG
             )
 
@@ -489,7 +481,6 @@ class DateCog(commands.Cog):
                     ("house", "house", discord.ButtonStyle.danger)
                 ],
                 mode="first",
-                wrong_values=["house"],
                 timeout=300
             )
 
@@ -497,7 +488,7 @@ class DateCog(commands.Cog):
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                "get in loser.\nwhere we going.\nfirst click decides because democracy got nerfed.",
+                "get in loser.\nwhere we going.\nfirst click decides because democracy got tired.",
                 image=TAXI_IMG
             )
 
@@ -510,14 +501,14 @@ class DateCog(commands.Cog):
                     outside,
                     "Dwayne Rock Jhonson",
                     ROCK_PFP,
-                    "HOUSE???\nno. date needs monument. go look at metal triangle."
+                    "HOUSE?\nHELL NAH BROTHER.\nthis is a date not bedtime.\ntaxi go to aifil tawar."
                 )
 
             await self.speak(
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                "destination: **aifil tawar**.\ndrive time: **30 seconds**.\nseatbelt optional. regret mandatory."
+                "destination: **aifil tawar**.\ndrive time: **30 seconds**.\nseatbelt optional. vibes required."
             )
 
             await asyncio.sleep(30)
@@ -528,14 +519,14 @@ class DateCog(commands.Cog):
                 outside,
                 "le taxi driver",
                 TAXI_PFP,
-                f"we here.\nget out my car and go romance over there: {tower.mention}"
+                f"we here.\nget out my car and go be romantic over there: {tower.mention}"
             )
 
             await self.speak(
                 tower,
                 "le taxi driver",
                 TAXI_PFP,
-                "welcome to **aifal tawar**.\nu got **5 minutes**.\nbe cute. be cringe. i am not watching. probably.",
+                "welcome to **aifal tawar**.\nu got **5 minutes**.\nbe cute. be cringe. be historical.",
                 image=EIFEL_IMG
             )
 
@@ -550,7 +541,6 @@ class DateCog(commands.Cog):
                     ("no kiss ending", "no_kiss", discord.ButtonStyle.danger)
                 ],
                 mode="both",
-                wrong_values=["no_kiss"],
                 timeout=300
             )
 
@@ -558,7 +548,7 @@ class DateCog(commands.Cog):
                 tower,
                 "French guy",
                 FRENCH_GUY_PFP,
-                "final boss choice.\nchoose ending.\nno kiss ending is available but also illegal."
+                "final boss choice.\nchoose ending.\nno kiss ending exists but it is suspicious."
             )
 
             await self.button_msg(tower, "ending buttons:", end_view)
@@ -570,14 +560,14 @@ class DateCog(commands.Cog):
                     tower,
                     "Dwayne Rock Jhonson",
                     ROCK_PFP,
-                    "NO KISS???\nbad ending patched. forced update installed."
+                    "NO KISS?\nHELL NAH BROTHER.\nromance ending has been force updated."
                 )
 
             await self.speak(
                 tower,
                 "French guy",
                 FRENCH_GUY_PFP,
-                f"{requester.mention} and {partner.mention} ended le date with kiss.\ncinema. protien. face card economy. peak fiction."
+                f"{requester.mention} and {partner.mention} ended le date with kiss.\ncinema. protien. fancy payment aura. peak fiction."
             )
 
         finally:
