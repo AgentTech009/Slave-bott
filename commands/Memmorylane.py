@@ -21,9 +21,9 @@ class MemoryLane(commands.Cog):
 
     def typing_time(self, msg, narrator=False):
         if narrator:
-            return random.uniform(0.5, 1.5)
+            return random.uniform(0.6, 1.4)
 
-        return max(2.0, min(len(msg) * 0.10 + random.uniform(1.0, 2.4), 7.0))
+        return max(2.0, min(len(msg) * 0.12 + random.uniform(1.3, 2.8), 8.0))
 
     async def safe_change_nick(self, guild, name):
         if self.current_typing_name == name:
@@ -36,6 +36,12 @@ class MemoryLane(commands.Cog):
         except:
             pass
 
+    async def fake_typing_only(self, channel, guild, name, seconds):
+        await self.safe_change_nick(guild, name)
+
+        async with channel.typing():
+            await asyncio.sleep(seconds)
+
     async def send_as(self, channel, webhook, guild, name, text, pfp, narrator=False):
         parts = text.split("\n")
 
@@ -44,7 +50,7 @@ class MemoryLane(commands.Cog):
             if not part:
                 continue
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(random.uniform(2.0, 3.0))
 
             await self.safe_change_nick(guild, name)
 
@@ -57,6 +63,9 @@ class MemoryLane(commands.Cog):
                 avatar_url=pfp,
                 allowed_mentions=discord.AllowedMentions.none()
             )
+
+            if part == "Athhh....👀":
+                await asyncio.sleep(5)
 
     @commands.command(name="memmorylane")
     @commands.has_permissions(administrator=True)
@@ -93,7 +102,7 @@ class MemoryLane(commands.Cog):
         narrator_webhook = await channel.create_webhook(name=NARRATOR_NAME)
         final_webhook = await channel.create_webhook(name=FINAL_BOY_NAME)
 
-        await asyncio.sleep(5)
+        await asyncio.sleep(15)
 
         script = [
             (NARRATOR_NAME, narrator_webhook, "**8:47**", NARRATOR_PFP, True),
@@ -122,33 +131,34 @@ class MemoryLane(commands.Cog):
                 "one of gods most beautiful love stories...",
                 NARRATOR_PFP,
                 True
-            ),
-
-            (
-                NARRATOR_NAME,
-                narrator_webhook,
-                "*someone is typing...*",
-                NARRATOR_PFP,
-                True
-            ),
-
-            (
-                FINAL_BOY_NAME,
-                final_webhook,
-                "Babyy..\n"
-                "I will always be with you🥹🥹\n"
-                "I WILL ALWAYS LOVE YOU🥹🥹\n"
-                "-your nervous little boy..",
-                FINAL_BOY_PFP,
-                False
             )
         ]
 
         for name, webhook, message, pfp, narrator in script:
-            if message == "Babyy..\nI will always be with you🥹🥹\nI WILL ALWAYS LOVE YOU🥹🥹\n-your nervous little boy..":
-                await asyncio.sleep(3)
-
             await self.send_as(channel, webhook, guild, name, message, pfp, narrator)
+
+        await asyncio.sleep(3)
+
+        await self.fake_typing_only(channel, guild, "someone", 5)
+
+        final_lines = [
+            "Babyy..",
+            "I will always be with you🥹🥹",
+            "I WILL ALWAYS LOVE YOU🥹🥹",
+            "-your nervous little boy.."
+        ]
+
+        for line in final_lines:
+            await asyncio.sleep(random.uniform(2.0, 3.0))
+
+            await self.fake_typing_only(channel, guild, FINAL_BOY_NAME, 2)
+
+            await final_webhook.send(
+                content=line,
+                username=FINAL_BOY_NAME,
+                avatar_url=FINAL_BOY_PFP,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
 
         for webhook in [boy_webhook, girl_webhook, narrator_webhook, final_webhook]:
             try:
