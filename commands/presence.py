@@ -2,89 +2,172 @@ import discord
 from discord.ext import commands
 from datetime import datetime, timezone
 
-LOG_CHANNEL_ID = 1500403352763236382
-
 TRACKED_USERS = [
     123456789012345678,  # your id
-    987654321098765432   # other person id
+    987654321098765432   # other person's id
 ]
+
+MAX_LOGS = 10
 
 
 class PresenceLogger(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.sessions = {}
+        self.current_online_since = {}
 
-    def get_status_info(self, status):
+    def now(self):
+        return datetime.now(timezone.utc)
+
+    def format_time(self, dt):
+        if not dt:
+            return "Not recorded"
+
+        unix = int(dt.timestamp())
+        return f"<t:{unix}:F> • <t:{unix}:R>"
+
+    def format_duration(self, start, end):
+        if not start or not end:
+            return "Not recorded"
+
+        seconds = int((end - start).total_seconds())
+
+        if seconds < 60:
+            return f"{seconds}s"
+
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{minutes}m"
+
+        hours = minutes // 60
+        mins = minutes % 60
+        if hours < 24:
+            return f"{hours}h {mins}m"
+
+        days = hours // 24
+        hrs = hours % 24
+        return f"{days}d {hrs}h"
+
+    def get_status_text(self, status):
         status = str(status)
 
         if status == "online":
             return "🟢 Online", discord.Color.green()
-        elif status == "offline":
-            return "⚫ Offline", discord.Color.dark_grey()
-        elif status == "idle":
+        if status == "idle":
             return "🌙 Idle", discord.Color.gold()
-        elif status == "dnd":
-            return "⛔ Do Not Disturb", discord.Color.red()
-        else:
-            return f"❓ {status}", discord.Color.blurple()
+        if status == "dnd":
+            return "⛔ DND", discord.Color.red()
+        if status == "offline":
+            return "⚫ Offline", discord.Color.dark_grey()
 
-    def make_embed(self, member, before_status, after_status):
-        now = datetime.now(timezone.utc)
+        return status, discord.Color.blurple()
 
-        before_text, _ = self.get_status_info(before_status)
-        after_text, color = self.get_status_info(after_status)
+    def is_visible_online(self, status):
+        return str(status) in ["online", "idle", "dnd"]
 
-        embed = discord.Embed(
-            title="Presence Update",
-            color=color,
-            timestamp=now
-        )
+    def save_session(self, user_id, online_at, offline_at):
+        if user_id not in self.sessions:
+            self.sessions[user_id] = []
 
-        embed.add_field(
-            name="User",
-            value=f"{member.mention}\n`{member}`",
-            inline=False
-        )
+        self.sessions[user_id].insert(0, {
+            "online": online_at,
+            "offline": offline_at
+        })
 
-        embed.add_field(
-            name="Status Change",
-            value=f"{before_text} → {after_text}",
-            inline=False
-        )
-
-        embed.add_field(
-            name="Time",
-            value=f"<t:{int(now.timestamp())}:F>\n<t:{int(now.timestamp())}:R>",
-            inline=False
-        )
-
-        embed.set_thumbnail(url=member.display_avatar.url)
-        embed.set_footer(text="Live Presence Tracker")
-
-        return embed
+        self.sessions[user_id] = self.sessions[user_id][:MAX_LOGS]
 
     @commands.Cog.listener()
     async def on_presence_update(self, before, after):
         if after.id not in TRACKED_USERS:
             return
 
-        before_status = str(before.status)
-        after_status = str(after.status)
+        before_online = self.is_visible_online(before.status)
+        after_online = self.is_visible_online(after.status)
 
-        # only log if actually changed
-        if before_status == after_status:
+        if before_online == after_online:
             return
 
-        channel = self.bot.get_channel(LOG_CHANNEL_ID)
+        now = self.now()
 
-        if channel is None:
-            try:
-                channel = await self.bot.fetch_channel(LOG_CHANNEL_ID)
-            except:
-                return
+        if not before_online and after_online:
+            self.current_online_since[after.id] = now
 
-        embed = self.make_embed(after, before_status, after_status)
-        await channel.send(embed=embed)
+        elif before_online and not after_online:
+            online_at = self.current_online_since.pop(after.id, None)
+
+            if online_at is None:
+                online_at = now
+
+            self.save_session(after.id, online_at, now)
+
+    @commands.command(name="lastonline")
+    async def lastonline(self, ctx, member: discord.Member = None):
+        if member is None:
+            return await ctx.send("Use `.lastonline @user`")
+
+        if member.id not in TRACKED_USERS:
+            return await ctx.send("That user is not tracked.")
+
+        now = self.now()
+        current_status = str(member.status)
+        status_text, color = self.get_status_text(current_status)
+
+        if self.is_visible_online(member.status) and member.id not in self.current_online_since:
+            self.current_online_since[member.id] = now
+
+        embed = discord.Embed(
+            title="Last Online Logs",
+            description=f"{member.mention}\n`{member}`",
+            color=color,
+            timestamp=now
+        )
+
+        embed.add_field(
+            name="Current Status",
+            value=status_text,
+            inline=False
+        )
+
+        if self.is_visible_online(member.status):
+            online_since = self.current_online_since.get(member.id)
+            embed.add_field(
+                name="Currently Online Since",
+                value=self.format_time(online_since),
+                inline=False
+            )
+
+        logs = self.sessions.get(member.id, [])
+
+        if not logs:
+            embed.add_field(
+                name="Last 10 Sessions",
+                value="No completed online sessions recorded yet.",
+                inline=False
+            )
+        else:
+            text = ""
+
+            for index, log in enumerate(logs, start=1):
+                online_at = log["online"]
+                offline_at = log["offline"]
+
+                text += (
+                    f"**#{index}**\n"
+                    f"🟢 Online: {self.format_time(online_at)}\n"
+                    f"⚫ Offline: {self.format_time(offline_at)}\n"
+                    f"⏱️ Duration: `{self.format_duration(online_at, offline_at)}`\n\n"
+                )
+
+            embed.add_field(
+                name="Last 10 Sessions",
+                value=text[:1024],
+                inline=False
+            )
+
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_footer(text="Silent Presence Tracker")
+
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):
