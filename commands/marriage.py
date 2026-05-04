@@ -158,7 +158,8 @@ class MarriageSetup(commands.Cog):
             await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, f"Do you take {partner.mention} to be your partner?")
             await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, "To love her.")
             await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, "To care for her.")
-            await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, "And to stay with her even when she takes 15 minutes to reply?")
+            await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, "And to stay with her...")
+            await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, " even when she takes 15 minutes to reply...")
 
             await channel.send(f"{ctx.author.mention} type `I do`")
             await self.wait_for_exact(channel, ctx.author, "I do")
@@ -200,14 +201,10 @@ class MarriageSetup(commands.Cog):
             await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, "By the blessing of God...")
             await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, "And by the power this bot definitely should not have...")
             await self.send_webhook(channel, guild, priest_webhook, PRIEST_NAME, PRIEST_PFP, f"I now pronounce {ctx.author.mention} and {partner.mention} married.")
-            await self.send_webhook(channel, guild, narrator_webhook, NARRATOR_NAME, NARRATOR_PFP, "You may now celebrate 🥹❤️")
+            await self.send_webhook(channel, guild, narrator_webhook, NARRATOR_NAME, NARRATOR_PFP, "You may now Kiss 🥹❤️")
 
             await asyncio.sleep(3)
 
-            await self.send_webhook(
-                channel, guild, narrator_webhook, NARRATOR_NAME, NARRATOR_PFP,
-                "*the crowd reacts...*"
-            )
 
             await self.send_webhook(
                 channel, guild, waitress_webhook, "Le weightress", WAITRESS_PFP,
@@ -221,7 +218,7 @@ class MarriageSetup(commands.Cog):
 
             await self.send_webhook(
                 channel, guild, koni_webhook, "Koni", KONI_PFP,
-                "Mew *licks her own ahh*"
+                "Mew \n*licks her own ahh*"
             )
 
         finally:
