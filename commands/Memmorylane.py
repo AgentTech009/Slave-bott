@@ -145,7 +145,7 @@ class MemoryLane(commands.Cog):
             "Babyy..",
             "I will always be with you🥹🥹",
             "I WILL ALWAYS LOVE YOU🥹🥹",
-            "-your nervous little boy.."
+            "MWAAAAAAAHHHH🥹🥹🥹🥹🥹💋💋💋💋💋💋💋💋💋💋"
         ]
 
         first = True
