@@ -114,7 +114,7 @@ class MemoryLane(commands.Cog):
             (BOY_NAME, boy_webhook, "Enthaaaa👀", BOY_PFP, False),
 
             (NARRATOR_NAME, narrator_webhook, "**The girl went to eat porotta while the boy was dying..**", NARRATOR_PFP, True),
-            (NARRATOR_NAME, narrator_webhook, "**15 minutes later**", NARRATOR_PFP, True),
+            (NARRATOR_NAME, narrator_webhook, "**15 minutes later...**", NARRATOR_PFP, True),
 
             (GIRL_NAME, girl_webhook, "Aahhh athhhh", GIRL_PFP, False),
             (BOY_NAME, boy_webhook, "Athhh....👀", BOY_PFP, False),
@@ -126,9 +126,9 @@ class MemoryLane(commands.Cog):
             (
                 NARRATOR_NAME,
                 narrator_webhook,
-                "And right there..\n"
-                "That was the beginning of..\n"
-                "one of gods most beautiful love stories...",
+                "**And right there..**\n"
+                "**That was the beginning of..**\n"
+                "**One of gods most beautiful love stories...**",
                 NARRATOR_PFP,
                 True
             )
@@ -142,7 +142,7 @@ class MemoryLane(commands.Cog):
         await self.fake_typing_only(channel, guild, "someone", 5)
 
         final_lines = [
-            "Babyy..",
+            "Babyy..🥹🥹",
             "I will always be with you🥹🥹",
             "I WILL ALWAYS LOVE YOU🥹🥹",
             "MWAAAAAAAHHHH🥹🥹🥹🥹🥹💋💋💋💋💋💋💋💋💋💋"
