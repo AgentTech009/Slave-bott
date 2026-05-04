@@ -8,7 +8,7 @@ BOY_NAME = "kokachi._"
 NARRATOR_NAME = "Narrator"
 FINAL_BOY_NAME = "niranjannnnnn.____"
 
-GIRL_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500573861866115234/IMG_20260504_003425.jpg?ex=69f8edcf&is=69f79c4f&hm=baeaf89fd0d95b2b8d19fe4af0397015ee82ddc409586d0ab3a11ae93f2e3c53&"
+GIRL_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500711116051845200/IMG-20260504-WA0005.jpg?ex=69f96da3&is=69f81c23&hm=1a728dfc85b7a10444e03b5a76d4de36648612130e37e1317ad70d406902ee3c&"
 BOY_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500573862146867391/50d7438ff1dd2822ed0cf84e7aaf4965.jpg?ex=69f8edd0&is=69f79c50&hm=57ee1f5c8cbba303bd4df99f5b7cb178d83b5653890b05da29bda600b95b259a&"
 NARRATOR_PFP = "https://cdn-icons-png.flaticon.com/512/833/833472.png"
 FINAL_BOY_PFP = "https://cdn.discordapp.com/attachments/1500472877210927197/1500578549000700038/533388631_18070949531471399_510634509294917079_n.jpg?ex=69f8f22d&is=69f7a0ad&hm=b426d103eda23a1de09a3070dbe2aa0c5b801af90576d2061c47e98e4f23430b&"
