@@ -96,7 +96,7 @@ class MarriageSetup(commands.Cog):
 
         await channel.send("Both have entered. The wedding shall begin 💒")
 
-    @commands.command(name="marriagesetup")
+    @commands.command(name="marry")
     @commands.has_permissions(administrator=True)
     async def marriagesetup(self, ctx, partner: discord.Member):
         if partner.bot:
