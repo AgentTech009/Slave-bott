@@ -109,7 +109,7 @@ class ChildCog(commands.Cog):
         await self.gap(3)
         await self.bot_say(
             channel,
-            "Uhhh yall lost..\nYou can either quit parenthood or start again from the question u lost on..\n\nOption 1. Quit\nOption 2. Restart"
+            "Uhhhh yall lost..\nYou can either quit parenthood or start again from the question u lost on..\n\nOption 1. Quit\nOption 2. Restart"
         )
         await channel.send(view=RestartView(self, stage_func))
 
